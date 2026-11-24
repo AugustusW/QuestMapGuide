@@ -360,6 +360,9 @@ do
   local bs = itemBtns()
   H.eq(#bs, 4, "四個按鈕顯示")
   H.eq(bs[1].nameFs:GetText(), "物品 #6087", "未快取名稱")
+  -- 品質色框在圖示底下：同一層級的兩張材質遊戲不保證先後（實機看到整格只有框色、圖示被蓋住）
+  local LAYER = { BACKGROUND = 1, BORDER = 2, ARTWORK = 3, OVERLAY = 4 }
+  H.check(LAYER[bs[1].border._layer or "ARTWORK"] < LAYER[bs[1].icon._layer or "ARTWORK"], "品質框的繪製層低於圖示")
   H.eq(bs[1].countFs:GetText(), "", "count=1 不顯示數量")
   H.eq(bs[4].countFs:GetText(), "5", "count=5 顯示 5")
   -- 一欄：x 相同、y 由上往下

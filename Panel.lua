@@ -35,7 +35,7 @@ local msgText, footer, countText
 local tabButtons, checkButtons, searchBox, searchHint = {}, {}, nil, nil
 local TABS = { "open", "log", "done", "all" }
 local TAB_KEY = { open = "tabOpen", log = "tabLog", done = "tabDone", all = "tabAll" }
-local CHECKS = { "exclClass", "exclProf", "exclFaction", "showDone", "showLow" }
+local CHECKS = { "exclClass", "exclProf", "exclFaction", "showDone", "showLow", "showHoliday" }
 
 local Filter = ns.Filter
 local questName = Filter.name
@@ -85,7 +85,7 @@ local function buildEntry(id, q, uiMapId, offMap)
     local mapId = startMap or (type(q.maps) == "table" and q.maps[1]) or nil
     mapName = ns.Data.mapName(mapId)
   end
-  return { questId = id, name = questName(q.n), typeId = q.t, n = q.n, starts = q.s, lv = q.lv,
+  return { questId = id, name = questName(q.n), typeId = q.t, h = q.h, n = q.n, starts = q.s, lv = q.lv,
     r = r, g = g, b = b, npc = npc, x = x, y = y, status = st, dim = dim, dimText = dimText,
     startMap = startMap, profLow = Filter.profLow(id, q) or nil, offMap = offMap or nil, mapName = mapName }
 end
@@ -179,7 +179,7 @@ local function render()
     local r = i <= vis and rows[offset + i] or nil
     if r then
       b.questId = r.questId
-      local title = Filter.titled(r.name, r.typeId, r.questId)
+      local title = Filter.titled(r.name, r.typeId, r.questId, r.h)
       if r.lv and r.lv > 0 then title = string.format("[%d] %s", r.lv, title) end
       if r.profLow then title = title .. "  " .. ns.L("profLow") end
       b.title:SetText(title)
@@ -469,14 +469,20 @@ local function build()
   searchBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
   searchBox:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
 
-  -- 五個勾選框（兩欄三列）：三個「排除」＋顯示已完成＋顯示低等任務
+  -- 六個勾選框（兩欄三列）：三個「排除」＋顯示已完成＋顯示低等任務＋顯示節慶任務。
+  -- 兩欄平分面板寬；標籤限寬、不換行（太長截斷），左欄標籤不會壓到右欄的勾選框
+  local CHECK_X, CHECK = 8, 22
+  local colW = (WIDTH - CHECK_X * 2) / 2
   for i, key in ipairs(CHECKS) do
     local c = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
-    c:SetSize(22, 22)
+    c:SetSize(CHECK, CHECK)
     local col, row = (i - 1) % 2, math.floor((i - 1) / 2)
-    c:SetPoint("TOPLEFT", f, "TOPLEFT", 8 + col * 144, -72 - row * 22)
+    c:SetPoint("TOPLEFT", f, "TOPLEFT", CHECK_X + col * colW, -72 - row * 22)
     local lbl = c:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     lbl:SetPoint("LEFT", c, "RIGHT", 0, 1)
+    lbl:SetWidth(colW - CHECK - 4)
+    lbl:SetWordWrap(false)
+    lbl:SetJustifyH("LEFT")
     lbl:SetText(ns.L(key))
     lbl:SetTextColor(Theme.INK[1], Theme.INK[2], Theme.INK[3])
     c.label = lbl

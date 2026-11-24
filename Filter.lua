@@ -1,11 +1,12 @@
 -- 篩選、等級顏色、前置／同組淡化。純讀取：不建 frame、不改任務資料。
---   ns.Filter.visible(questId, opts, quest) -> bool, reason   reason：nil | "class" | "faction" | "profession"
+--   ns.Filter.visible(questId, opts, quest) -> bool, reason   reason：nil | "class" | "faction" | "profession" | "low" | "holiday"
+--   ns.Filter.holidayHidden(questId, quest, opts, status) -> bool  未接的節慶任務（h=1）且沒勾「顯示節慶任務」；暗月（h=2）永遠 false
 --   ns.Filter.dim(questId)           -> nil | { kind = "prereq" | "group", name }
 --   ns.Filter.color(questId)         -> r, g, b, low   low＝難度色是灰色（trivial）
 --   ns.Filter.step(questId)          -> n, m | nil     同名線性連鎖的第幾步／共幾步
 --   ns.Filter.profLow(questId)       -> bool            有該專業但點數不足
 -- 每個函式的最後一個參數 quest 可傳已解碼的任務表（呼叫端已經解過就不必再解一次）。
--- 設定存角色存檔 QuestMapGuideCharDB.filter：exclClass／exclProf／exclFaction（勾＝排除，預設全勾）、showDone、showLow（顯示灰色低等任務，預設不勾）、tab。
+-- 設定存角色存檔 QuestMapGuideCharDB.filter：exclClass／exclProf／exclFaction（勾＝排除，預設全勾）、showDone、showLow（顯示灰色低等任務，預設不勾）、showHoliday（顯示節慶任務，預設不勾）、tab。
 -- 玩家資訊取不到（API 不存在或回傳不是預期型別）就不排除：寧可多列，不要誤藏。
 -- 前置多個時用「全部完成」才不淡化（classic-db PrevQuestId／NextQuestId 規則尚未查證，spec 規定先照此處理）；
 -- 前置任務不在內建資料裡就略過（沒有名稱可顯示，也無從判斷）。
@@ -14,7 +15,7 @@ local _, ns = ...
 local Filter = {}
 ns.Filter = Filter
 
-local DEFAULTS = { exclClass = true, exclProf = true, exclFaction = true, showDone = false, showLow = false, tab = "open" }
+local DEFAULTS = { exclClass = true, exclProf = true, exclFaction = true, showDone = false, showLow = false, showHoliday = false, tab = "open" }
 local fallback = {}   -- 角色存檔還不存在時（理論上不會）暫存
 
 local function store()
@@ -93,9 +94,17 @@ local function has(list, v)
   return false
 end
 
+-- 節慶任務（資料 h=1）預設隱藏，但跟低等任務一樣只藏「未接」的：日誌裡的任務不能從面板消失，已完成的也照常列。
+-- 暗月馬戲團（h=2）只標示、不隱藏。地圖標記不看這個（明確打開的任務一律標記）
+function Filter.holidayHidden(questId, q, opts, status)
+  if type(q) ~= "table" or q.h ~= 1 or optOf(opts, "showHoliday") then return false end
+  return (status or ns.Status.of(questId)) == "open"
+end
+
 function Filter.visible(questId, opts, quest, status)
   local q = quest or ns.Data.quest(questId)
   if not q then return true end
+  if Filter.holidayHidden(questId, q, opts, status) then return false, "holiday" end
   if optOf(opts, "exclFaction") then
     if me.faction and q.f and q.f ~= me.faction then return false, "faction" end
     -- 種族限制：race 非空且玩家種族已知才排除（空表＝不限，缺＝未知）
@@ -131,6 +140,8 @@ end
 
 -- 任務類型標示：名稱後加「 (類型)」；只標已知類型，其他值或 nil 不標。只用於顯示，排序與搜尋用不含類型的名稱。
 local TYPE_KEY = { [1] = "qType1", [81] = "qType81", [62] = "qType62", [41] = "qType41", [83] = "qType83" }
+-- 節慶標示（資料 h）：接在類型標示後面
+local HOLIDAY_KEY = { [1] = "qHoliday", [2] = "qDarkmoon" }
 -- 同名連鎖步驟：沿 prev／next 走出線性鏈（每一步前後最多各一個、都在資料裡），鏈中任務同名才有。
 -- 結果整條鏈一次算好、存在 session 內（資料不變）；Panel.InvalidateIndex 學到新名稱時一併清掉。
 local stepCache = {}
@@ -241,12 +252,14 @@ function Filter.withStep(name, questId)
   return name
 end
 
--- 顯示用標題：名稱 (步驟) (類型)。排序與搜尋用不含步驟與類型的名稱。
-function Filter.titled(name, typeId, questId)
+-- 顯示用標題：名稱 (步驟) (類型) (節慶／暗月)。排序與搜尋用不含步驟與標示的名稱。
+function Filter.titled(name, typeId, questId, h)
   if questId then name = Filter.withStep(name, questId) end
   local key = type(typeId) == "number" and TYPE_KEY[typeId]
-  if not key then return name end
-  return name .. " (" .. ns.L(key) .. ")"
+  if key then name = name .. " (" .. ns.L(key) .. ")" end
+  local hk = type(h) == "number" and HOLIDAY_KEY[h]
+  if hk then name = name .. " (" .. ns.L(hk) .. ")" end
+  return name
 end
 
 -- 淡化只對「可接」的任務；進行中與已完成不淡化

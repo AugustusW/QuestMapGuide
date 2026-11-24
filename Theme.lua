@@ -27,6 +27,12 @@ Theme.DISABLED = rgb("85775f")          -- 停用的勾選框標籤
 -- 可接任務圖示：遊戲 NPC 頭上／對話框裡的黃色「!」。清單可接列、明細起點連結、地圖標記共用這一張
 -- （使用者選 A：原本的藏寶圖物品圖示在地圖上像錯誤標記）。材質路徑無法用 API 探測，需實機確認
 Theme.QUEST_ICON = "Interface\\GossipFrame\\AvailableQuestIcon"
+-- 地圖起點標記：深色方底＋1px 金邊（Theme.box），黃色「!」放中間。亮色地圖（例：千針石林的黃色區域）上
+-- 只有黃色「!」會看不出來（實機回報 1152）。不用圓形遮罩：Texture 的 AddMaskTexture 不在探測清單
+Theme.PIN_SIZE = 22                    -- 標記框（原本 18）
+Theme.PIN_ICON = 18                    -- 「!」圖示，四周留 2px 深色底
+Theme.PIN_BG = rgb("1a1208", 0.75)     -- 深褐黑底
+Theme.PIN_EDGE = rgb("d4a52a", 1)      -- 金邊
 Theme.LOG = Theme.LINK                  -- 進行中「?」：連結藍
 Theme.DIM_ALPHA = 0.70                  -- 淡化列：羊皮紙底上 0.55 仍太淡，改 0.70
 Theme.HINT = { 0.70, 0.70, 0.70 }       -- 搜尋框提示字：框是遊戲的深色輸入框，用淺灰

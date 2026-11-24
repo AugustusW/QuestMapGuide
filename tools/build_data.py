@@ -19,6 +19,8 @@
   s<n>:…     字串，n 是位元組數（內容原樣，不跳脫）
 任務的 prev／next／conc／excl 是純 questId 數字清單（匯出的 {source, questId} 物件在建置時轉換，元素缺整數 questId 即 BuildError）。
 欄位為 nil＝未知；空表＝已知為空。輸出不含 source／correction 等來源欄位。
+任務的 h：節慶分類，由匯出的 categoryId（官方任務分類）經 HOLIDAY_CATEGORY 對照：1＝節慶（季節性、新年慶典、仲夏），
+2＝暗月馬戲團；其他分類或 categoryId 為 null／缺欄位時不寫（Lua 端讀到 nil＝一般任務）。categoryId 本身不輸出。
 """
 import argparse
 import json
@@ -33,6 +35,8 @@ SCHEMA = 3
 FORMAT = 1  # QMG_Data.fmt；編碼或索引改變時加一，Data.lua 不認得的版本就當沒有資料
 KIND_PREFIX = {"npc": "n", "object": "o"}
 FACTION = {"ALLIANCE": "A", "HORDE": "H"}
+# 官方任務分類 categoryId → 任務記錄的 h（1＝節慶：預設隱藏；2＝暗月馬戲團：只標示、不隱藏）
+HOLIDAY_CATEGORY = {22: 1, 366: 1, 369: 1, 364: 2}  # 22 季節性、366 新年慶典、369 仲夏、364 暗月馬戲團
 
 # 簡體防線：zh_TW 出現這些字（正體寫法不同的簡體字）就是資料混進簡體。
 # 只收「正體不會用」的字；兩岸同形或正體也用的字（云、余、干、后、里…）不收，避免誤傷。
@@ -186,6 +190,10 @@ def quest_record(q) -> dict:
     r["xp"] = rw.get("experience")
     r["cu"] = rw.get("moneyCopper")
     r["t"] = q.get("typeId")
+    cat = q.get("categoryId")
+    if cat is not None and (not isinstance(cat, int) or isinstance(cat, bool)):
+        raise BuildError(f"任務 {q['questId']} categoryId 必須是整數或 null，得到 {cat!r}")
+    r["h"] = HOLIDAY_CATEGORY.get(cat)
     return {k: v for k, v in r.items() if v is not None}
 
 

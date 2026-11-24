@@ -8,8 +8,9 @@ local Pins = {}
 ns.Pins = Pins
 
 Pins.ICON = ns.Theme.QUEST_ICON  -- 可接任務的黃色「!」（與清單、明細起點同一張）
-local PIN_SIZE = 18
-local LEVEL_OFFSET = 1  -- 畫布 frame level + 1。假設低於遊戲自己的任務 POI，但層級順序遊戲內未驗證，必須實機確認
+local LEVEL_OFFSET = 7000  -- 畫布 frame level + 7000：畫在遊戲自己的地圖標記之上。
+                          -- 2026-11-25 實機 /fstack：畫布上遊戲自己的子框架層級到 2002–2920（某些不接滑鼠的覆蓋層），
+                          -- +500 的標記滑鼠移過去有提示、畫面上卻被蓋住。frame level 上限 10000，留餘裕
 
 local selected        -- 選中的 questId（換地圖保留）
 local added = false   -- provider 已加入 WorldMapFrame
@@ -34,11 +35,16 @@ local function onLeave() GameTooltip:Hide() end
 
 local function newPin(canvas)
   local f = CreateFrame("Frame", nil, canvas)
-  f:SetSize(PIN_SIZE, PIN_SIZE)
+  local T = ns.Theme
+  f:SetSize(T.PIN_SIZE, T.PIN_SIZE)
   f:SetFrameLevel(canvas:GetFrameLevel() + LEVEL_OFFSET)
   f:EnableMouse(true)
+  -- 深色底（BACKGROUND）＋金邊（BORDER）在下，「!」（ARTWORK）在上：分在不同圖層，不靠同層的建立順序
+  f.badge = T.box(f)
+  T.boxColor(f.badge, T.PIN_BG, T.PIN_EDGE)
   local t = f:CreateTexture(nil, "ARTWORK")
-  t:SetAllPoints()
+  t:SetSize(T.PIN_ICON, T.PIN_ICON)
+  t:SetPoint("CENTER", f, "CENTER", 0, 0)
   t:SetTexture(Pins.ICON)
   f.tex = t
   f:SetScript("OnEnter", onEnter)
@@ -95,11 +101,13 @@ function draw()
       -- SetPoint 偏移以 pin 自己的縮放計，所以除以 pinScale
       f:SetPoint("CENTER", canvas, "TOPLEFT", x / 100 * w / pinScale, -y / 100 * h / pinScale)
       f:Show()
-      placed[#placed + 1] = { m = mapId, x = x / 100, y = y / 100, name = f.npcName, frame = f }
+      placed[#placed + 1] = { m = mapId, x = x / 100, y = y / 100, name = f.npcName, frame = f,
+        dw = w, dh = h, ds = scale }   -- 畫的當下用的畫布尺寸與縮放（/qmg pins 比對用）
     end
   end
 end
 
+-- 明確打開的任務（點清單列、明細的起點／前置／後續連結）一律標記，不看清單篩選（例如沒勾顯示節慶任務）
 function Pins.Show(questId)
   selected = questId
   draw()
@@ -133,3 +141,60 @@ ns.Core.on("ADDON_LOADED", function(name)
   wm:AddDataProvider(p)
   added = true
 end)
+
+-- /qmg pins 的除錯取值：方法不存在、拋錯或回傳不是預期型別都回 nil（印成 ?）
+local function get(obj, method, want)
+  if type(obj) ~= "table" or type(obj[method]) ~= "function" then return nil end
+  local ok, v = pcall(obj[method], obj)
+  if ok and type(v) == (want or "number") then return v end
+  return nil
+end
+local function n1(v) return v and string.format("%.1f", v) or "?" end
+local function n2(v) return v and string.format("%.2f", v) or "?" end
+
+-- /qmg pins：印出目前選中的任務、地圖與畫出的標記（實機查「點了沒標記」用）。
+-- 每個標記多一行，用來分辨看不到的原因：
+--   canvas／drawn：畫布目前與畫的當下的尺寸、縮放（縮放或尺寸在畫之後變了 → 位置過時）
+--   dx／dy：標記中心與「畫布左上＋座標百分比」預期位置的螢幕座標差（不是 0 → 錨點或縮放算錯）
+--   inView：標記中心在畫布父框架（可視範圍）內
+--   alpha／strata：有效透明度、標記與畫布的 strata；tex：材質（nil → 沒載入）
+function Pins.debugLines()
+  local out = {}
+  local wm = _G.WorldMapFrame
+  out[#out + 1] = string.format("selected=%s map=%s added=%s placed=%d", tostring(selected),
+    tostring(wm and wm.GetMapID and wm:GetMapID()), tostring(added), #placed)
+  local cv = canvasOf()
+  local cw, ch, cs, ce = get(cv, "GetWidth"), get(cv, "GetHeight"), get(cv, "GetScale"), get(cv, "GetEffectiveScale")
+  local cl, ct = get(cv, "GetLeft"), get(cv, "GetTop")
+  local view = cv and get(cv, "GetParent", "table")
+  local ve = get(view, "GetEffectiveScale")
+  local vl, vr, vt, vb = get(view, "GetLeft"), get(view, "GetRight"), get(view, "GetTop"), get(view, "GetBottom")
+  for i, p in ipairs(placed) do
+    local f = p.frame
+    out[#out + 1] = string.format("#%d %s (%.1f, %.1f) level=%s shown=%s visible=%s", i, tostring(p.name), p.x * 100, p.y * 100,
+      tostring(f and f.GetFrameLevel and f:GetFrameLevel()), tostring(f and f.IsShown and f:IsShown()),
+      tostring(f and f.IsVisible and f:IsVisible()))
+    local fl, ft, fw, fh, fe = get(f, "GetLeft"), get(f, "GetTop"), get(f, "GetWidth"), get(f, "GetHeight"), get(f, "GetEffectiveScale")
+    local dx, dy, inView = nil, nil, "?"
+    if fl and ft and fw and fh and fe then
+      local px, py = (fl + fw / 2) * fe, (ft - fh / 2) * fe   -- 標記中心（螢幕座標）
+      if cl and ct and cw and ch and ce then
+        dx, dy = px - (cl + p.x * cw) * ce, py - (ct - p.y * ch) * ce
+      end
+      if vl and vr and vt and vb and ve then
+        inView = tostring(px >= vl * ve and px <= vr * ve and py >= vb * ve and py <= vt * ve)
+      end
+    end
+    out[#out + 1] = string.format("  canvas w=%s h=%s scale=%s eff=%s | drawn w=%s h=%s scale=%s | dx=%s dy=%s inView=%s"
+      .. " | pin scale=%s eff=%s size=%sx%s alpha=%s strata=%s/%s | tex=%s",
+      n1(cw), n1(ch), n2(cs), n2(ce), n1(p.dw), n1(p.dh), n2(p.ds), n1(dx), n1(dy), inView,
+      n2(get(f, "GetScale")), n2(fe), n1(fw), n1(fh), n2(get(f, "GetEffectiveAlpha")),
+      tostring(get(f, "GetFrameStrata", "string") or "?"), tostring(get(cv, "GetFrameStrata", "string") or "?"),
+      tostring(get(f and f.tex, "GetTexture", "string") or get(f and f.tex, "GetTexture") or "?"))
+  end
+  return out
+end
+if ns.Core and ns.Core.slash then
+  ns.Core.slash.pins = function() for _, l in ipairs(Pins.debugLines()) do print(l) end end
+end
+

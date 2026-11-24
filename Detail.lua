@@ -219,7 +219,7 @@ function build()
   if not q then return end
   local mapId = _G.WorldMapFrame and WorldMapFrame.GetMapID and WorldMapFrame:GetMapID() or nil
   local r, g, b = Theme.levelInk(ns.Filter.color(id))
-  add(ns.Filter.titled(questName(id) or ("#" .. id), q.t, id), { r = r, g = g, b = b, title = true })
+  add(ns.Filter.titled(questName(id) or ("#" .. id), q.t, id, q.h), { r = r, g = g, b = b, title = true })
 
   add(L("status") .. L("colon") .. L("status" .. ({ open = "Open", log = "Log", done = "Done" })[ns.Status.of(id)]))
   if q.lv and q.lv > 0 then
@@ -588,10 +588,10 @@ local function buildFrame()
     local b = CreateFrame("Button", nil, frame)
     b.itemBtn = true
     b:SetSize(LINEW, ICON)
-    b.border = b:CreateTexture()
+    b.border = b:CreateTexture(nil, "BACKGROUND")   -- 品質色框墊在圖示底下（同層級先後不保證，實機曾整格只剩框色）
     b.border:SetPoint("TOPLEFT", b, "TOPLEFT", 0, 0)
     b.border:SetSize(ICON, ICON)
-    b.icon = b:CreateTexture()
+    b.icon = b:CreateTexture(nil, "ARTWORK")
     b.icon:SetPoint("TOPLEFT", b, "TOPLEFT", 1, -1)
     b.icon:SetSize(ICON - 2, ICON - 2)
     b.nameFs = b:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -614,6 +614,7 @@ local function buildFrame()
       GameTooltip:Show()
     end)
     b:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+    b:SetScript("OnClick", function(self) Detail.ModifiedItemClick(self.itemId) end)
     b:Hide()
     ibtns[i] = b
   end
@@ -632,6 +633,53 @@ ns.Core.on("ADDON_LOADED", function(name)
   if name ~= ADDON then return end
   buildFrame()
 end)
+-- 獎勵物品的修飾鍵點擊（跟背包物品一樣）：Shift＝把物品連結貼進聊天、Ctrl＝試穿；一般點擊不動作。
+-- 有完整連結（C_Item.GetItemInfo 第 2 個回傳值）就交給遊戲的 HandleModifiedItemClick，由遊戲依修飾鍵決定；
+-- 沒有 HandleModifiedItemClick 就自己分流到 ChatEdit_InsertLink／DressUpItemLink。
+-- 物品還沒快取：試穿只要 id，用 "item:<id>"；聊天連結必須是完整連結，請求載入，GET_ITEM_INFO_RECEIVED 時再貼（只貼一次）。
+local linkWanted   -- Shift 點了還沒快取的物品：載入後要貼進聊天的物品 id
+local function itemLink(id)
+  local info = C_Item and C_Item.GetItemInfo
+  if type(info) ~= "function" then return nil end
+  local ok, a, b = pcall(info, id)
+  if not ok then return nil end
+  if type(a) == "table" then b = a.hyperlink or a.itemLink end
+  return safe(b, "string")
+end
+local function keyDown(fn) return type(fn) == "function" and fn() and true or false end
+
+function Detail.ModifiedItemClick(id)
+  if type(id) ~= "number" then return false end
+  local shift, ctrl = keyDown(IsShiftKeyDown), keyDown(IsControlKeyDown)
+  if not (shift or ctrl) then return false end
+  local link = itemLink(id)
+  if link then
+    if type(HandleModifiedItemClick) == "function" then
+      HandleModifiedItemClick(link)
+    elseif shift and type(ChatEdit_InsertLink) == "function" then
+      ChatEdit_InsertLink(link)
+    elseif ctrl and type(DressUpItemLink) == "function" then
+      DressUpItemLink(link)
+    end
+    return true
+  end
+  if ctrl then
+    if type(DressUpItemLink) == "function" then DressUpItemLink("item:" .. id) end
+  else
+    linkWanted = id
+    if C_Item and type(C_Item.RequestLoadItemDataByID) == "function" then C_Item.RequestLoadItemDataByID(id) end
+  end
+  return true
+end
+
+ns.Core.on("GET_ITEM_INFO_RECEIVED", function(itemId)
+  if linkWanted == nil or itemId ~= linkWanted then return end
+  local link = itemLink(itemId)
+  if not link then return end
+  linkWanted = nil
+  if type(ChatEdit_InsertLink) == "function" then ChatEdit_InsertLink(link) end
+end)
+
 ns.Core.on("GET_ITEM_INFO_RECEIVED", function(itemId)
   if not cur or not pending[itemId] then return end
   pending[itemId] = nil

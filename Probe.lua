@@ -21,6 +21,11 @@ Probe.APIS = {
   "GetQuestLogRewardXP", "C_QuestLog.SetSelectedQuest", "C_QuestLog.GetSelectedQuest", "UnitSex",
   "C_Item.GetItemIconByID", "C_Item.GetItemQualityByID", "C_Item.GetItemQualityColor", "ITEM_QUALITY_COLORS",
   "GameTooltip.SetItemByID", "C_CreatureInfo.GetClassInfo", "C_CreatureInfo.GetRaceInfo",
+  -- 0.2.0：遊戲任務日誌點任務 → 面板切換（LogSelect.lua 掛 post-hook 的對象）
+  "QuestMapFrame_ShowQuestDetails", "QuestLog_SetSelection", "SelectQuestLogEntry", "QuestMapFrame", "QuestLogFrame",
+  -- 0.2.0：獎勵物品修飾鍵點擊（Detail.ModifiedItemClick）
+  "HandleModifiedItemClick", "ChatEdit_InsertLink", "DressUpItemLink", "IsShiftKeyDown", "IsControlKeyDown",
+  "C_Item.RequestLoadItemDataByID",
 }
 Probe.TEMPLATES = {
   "BasicFrameTemplateWithInset", "UIPanelButtonTemplate", "UICheckButtonTemplate", "UIPanelScrollFrameTemplate",

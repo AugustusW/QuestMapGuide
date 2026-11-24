@@ -239,7 +239,7 @@ for _, f in ipairs(H.frames) do
   elseif f._kind == "Button" and f.tab then tabs[#tabs + 1] = f
   elseif f._kind == "EditBox" then edit = f end
 end
-H.eq(#checks, 5, "五個勾選框"); H.eq(#tabs, 4, "四個分頁按鈕"); H.check(edit ~= nil, "有搜尋框")
+H.eq(#checks, 6, "六個勾選框（0.2.0 加顯示節慶任務）"); H.eq(#tabs, 4, "四個分頁按鈕"); H.check(edit ~= nil, "有搜尋框")
 for _, c in ipairs(checks) do if c.key == "exclFaction" then c._scripts.OnClick(c) end end
 H.eq(type(QuestMapGuideCharDB.filter.exclFaction), "boolean", "點勾選框寫進角色存檔")
 tabs[2]._scripts.OnClick(tabs[2])

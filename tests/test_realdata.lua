@@ -88,3 +88,17 @@ for _, locale in ipairs({ "zhTW", "enUS" }) do
   H.eq(d and d.kind, "prereq", locale .. " 前置未完成的任務被淡化")
   H.eq(d and d.name, pname, locale .. " 淡化帶前置名稱")
 end
+
+-- 0.2.0 節慶：正式資料帶 h。數字綁 2026-11-24 的匯出（QMG_Meta.exportedAt 2026-11-24T16:45:31，build/export_cat.json）：
+-- 季節性 80＋新年慶典 61＋仲夏 16＝157；暗月馬戲團 70。重建 Data/Forever/Quests.lua 時要跟著更新這兩個數字
+do
+  local ns = load("zhTW")
+  local c = { 0, 0 }
+  for _, id in ipairs(ns.Data.questIds()) do
+    local h = ns.Data.quest(id).h
+    if h then c[h] = c[h] + 1 end
+  end
+  H.eq(c[1], 157, "正式資料節慶任務數")
+  H.eq(c[2], 70, "正式資料暗月馬戲團任務數")
+  H.eq(ns.Filter.titled("x", nil, nil, ns.Data.quest(6961).h), "x (節慶)", "冬天爺爺任務（6961）標節慶")
+end

@@ -514,3 +514,41 @@ def test_relation_element_without_integer_questid_fails(tmp_path, bad):
     data["quests"][1]["prevs"] = bad
     with pytest.raises(build_data.BuildError):
         build_to(tmp_path, data)
+
+
+# ===== 0.2.0 節慶：categoryId → h（1＝節慶、2＝暗月馬戲團，其他不寫） =====
+def _q(cat, **extra):
+    q = copy.deepcopy(load_fixture()["quests"][0])
+    if cat == "absent":
+        q.pop("categoryId", None)
+    else:
+        q["categoryId"] = cat
+    q.update(extra)
+    return q
+
+
+@pytest.mark.parametrize("cat,h", [(22, 1), (366, 1), (369, 1), (364, 2), (12, None), (None, None), ("absent", None)])
+def test_category_maps_to_holiday_field(cat, h):
+    r = build_data.quest_record(_q(cat))
+    assert r.get("h") == h
+    assert "categoryId" not in r
+
+
+def test_holiday_categories_in_one_constant():
+    assert build_data.HOLIDAY_CATEGORY == {22: 1, 366: 1, 369: 1, 364: 2}
+
+
+def test_category_must_be_integer():
+    with pytest.raises(build_data.BuildError) as e:
+        build_data.quest_record(_q("22"))
+    assert "categoryId" in str(e.value)
+    with pytest.raises(build_data.BuildError):
+        build_data.quest_record(_q(True))
+
+
+def test_holiday_field_in_lua(tmp_path):
+    out = build_to(tmp_path, load_fixture())
+    assert run_lua(out, "D.quest(9900005).h") == "1"   # fixture：366 新年慶典
+    assert run_lua(out, "D.quest(9900004).h") == "2"   # fixture：364 暗月馬戲團
+    assert run_lua(out, "D.quest(9900002).h") == "nil"  # fixture：其他分類
+    assert run_lua(out, "D.quest(9900001).h") == "nil"  # fixture：沒有 categoryId

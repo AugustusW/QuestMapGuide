@@ -156,7 +156,8 @@
         1453
       ],
       "mappedBy": "start",
-      "description": "Plain English description."
+      "description": "Plain English description.",
+      "categoryId": 12
     },
     {
       "questId": 9900003,
@@ -185,7 +186,8 @@
       },
       "uiMapIds": [],
       "mappedBy": null,
-      "description": null
+      "description": null,
+      "categoryId": null
     },
     {
       "questId": 9900004,
@@ -212,7 +214,8 @@
         "moneyCopper": null
       },
       "uiMapIds": [],
-      "mappedBy": null
+      "mappedBy": null,
+      "categoryId": 364
     },
     {
       "questId": 9900005,
@@ -255,7 +258,8 @@
         "moneyCopper": 2
       },
       "uiMapIds": [],
-      "mappedBy": null
+      "mappedBy": null,
+      "categoryId": 366
     }
   ],
   "entities": [
