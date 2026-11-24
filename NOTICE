@@ -1,0 +1,17 @@
+QuestMapGuide（任務地圖指南）
+Copyright (C) 2026 AugustusW
+
+本插件以 GNU General Public License v3 授權，全文見 LICENSE。
+
+任務資料來源
+- Blizzard Game Data API（官方）。
+- CMaNGOS classic-db（https://github.com/cmangos/classic-db），授權 GPL v3。
+  其 COPYRIGHT.md 聲明 World of Warcraft 內容的權利屬於 Blizzard Entertainment。
+  轉出時的 commit：13e933726f386399d9820138fbd1123e7cda86c8；資料匯出日期：2026-11-23（QMG_Meta.exportedAt）。
+  授權核對結果：classic-db 為 GPL v3，與本插件相容；其 COPYRIGHT.md 聲明 World of Warcraft 內容的權利屬於 Blizzard Entertainment，本插件與 Blizzard 無關。
+  Source commit: 13e933726f386399d9820138fbd1123e7cda86c8; exported 2026-11-23.
+  Licence check: classic-db is GPL v3; its COPYRIGHT.md states that World of Warcraft content rights belong to Blizzard Entertainment. This addon is unaffiliated with Blizzard.
+- AugustusW 的人工校正。
+
+本插件與 Blizzard Entertainment 無關。World of Warcraft 相關名稱與內容的權利屬於 Blizzard Entertainment。
+資料僅供參考，實際內容以遊戲為準。

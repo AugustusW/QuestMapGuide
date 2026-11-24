@@ -1,0 +1,33 @@
+## Interface: 16001
+## Title: QuestMapGuide
+## Title-zhTW: 任務地圖指南
+## Notes: A panel beside the world map listing the quests on the shown map, with start points and completion status (offline data; the game is authoritative). Support: support@augustusw.com
+## Notes-zhTW: 世界地圖旁列出這張地圖的任務、起點與完成狀態（離線資料，實際以遊戲為準）。問題回報：support@augustusw.com
+## Version: 0.1.0-beta1
+## X-Curse-Project-ID: 1828685
+## Author: AugustusW
+## X-Email: support@augustusw.com
+## IconTexture: Interface\AddOns\QuestMapGuide\Media\icon
+## AddonCompartmentFunc: QuestMapGuide_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: QuestMapGuide_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: QuestMapGuide_OnAddonCompartmentLeave
+## SavedVariables: QuestMapGuideDB
+## SavedVariablesPerCharacter: QuestMapGuideCharDB
+## Category: Quests
+## Category-zhTW: 任務
+
+Locale.lua
+Core.lua
+LoadStart.lua
+Data/Forever/Quests.lua
+Data.lua
+LoadEnd.lua
+Probe.lua
+Learn.lua
+Status.lua
+Filter.lua
+Theme.lua
+Panel.lua
+Reward.lua
+Detail.lua
+Pins.lua

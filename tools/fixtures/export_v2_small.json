@@ -1,0 +1,297 @@
+{
+  "schemaVersion": 3,
+  "sourceVersion": "fixture-1",
+  "officialExportDate": "2026-11-01",
+  "wagoBuild": "1.15.0.99999",
+  "env": "prod",
+  "exportedAt": "2026-11-23T00:00:00+00:00",
+  "coverage": {
+    "withMap": 2,
+    "withoutMap": 3
+  },
+  "mappedBy": {
+    "start": 2,
+    "area": 0
+  },
+  "quests": [
+    {
+      "questId": 9900001,
+      "minLevel": 5,
+      "questLevel": 7,
+      "classes": [
+        1,
+        2
+      ],
+      "races": [
+        1,
+        4
+      ],
+      "skill": {
+        "id": 164,
+        "value": 25
+      },
+      "prevs": [],
+      "nexts": [
+        {
+          "source": "cmangos",
+          "questId": 9900002
+        }
+      ],
+      "concurrents": null,
+      "exclusives": [
+        {
+          "source": "cmangos",
+          "questId": 9900003
+        }
+      ],
+      "starts": [
+        {
+          "kind": "npc",
+          "entityId": 9901001,
+          "uiMapId": 1429,
+          "x": 45.3,
+          "y": 60.1,
+          "source": "official"
+        }
+      ],
+      "ends": [
+        {
+          "kind": "object",
+          "entityId": 9901001,
+          "uiMapId": 1453,
+          "x": 30.0,
+          "y": 31.5,
+          "source": "cmangos"
+        }
+      ],
+      "rewardItems": [
+        {
+          "id": 12345,
+          "count": 2,
+          "choice": false,
+          "source": "official"
+        },
+        {
+          "id": 12346,
+          "count": 1,
+          "choice": true,
+          "source": "correction"
+        }
+      ],
+      "names": {
+        "zh_TW": "測試任務一",
+        "en_US": "Test Quest One"
+      },
+      "faction": "ALLIANCE",
+      "typeId": 0,
+      "areaId": 12,
+      "rewards": {
+        "experience": 450,
+        "moneyCopper": 1200
+      },
+      "uiMapIds": [
+        1429,
+        1453
+      ],
+      "mappedBy": "start",
+      "description": "甲\r\n他說：「\"快來\"」\r乙\\丙"
+    },
+    {
+      "questId": 9900002,
+      "minLevel": 6,
+      "questLevel": 8,
+      "classes": null,
+      "races": null,
+      "skill": null,
+      "prevs": [
+        {
+          "source": "cmangos",
+          "questId": 9900001
+        }
+      ],
+      "nexts": [],
+      "concurrents": [
+        {
+          "source": "cmangos",
+          "questId": 9900004
+        },
+        {
+          "source": "official",
+          "questId": 9900005
+        }
+      ],
+      "exclusives": null,
+      "starts": [
+        {
+          "kind": "object",
+          "entityId": 9901001,
+          "uiMapId": 1453,
+          "x": 30.0,
+          "y": 31.5,
+          "source": "official"
+        }
+      ],
+      "ends": [
+        {
+          "kind": "npc",
+          "entityId": 9901001,
+          "uiMapId": 1429,
+          "x": 45.3,
+          "y": 60.1,
+          "source": "official"
+        }
+      ],
+      "rewardItems": [],
+      "names": {
+        "en_US": "Only English Name"
+      },
+      "faction": "HORDE",
+      "typeId": 1,
+      "areaId": 14,
+      "rewards": {
+        "experience": 0,
+        "moneyCopper": 0
+      },
+      "uiMapIds": [
+        1453
+      ],
+      "mappedBy": "start",
+      "description": "Plain English description."
+    },
+    {
+      "questId": 9900003,
+      "minLevel": 1,
+      "questLevel": 1,
+      "classes": [],
+      "races": [],
+      "skill": null,
+      "prevs": null,
+      "nexts": null,
+      "concurrents": null,
+      "exclusives": null,
+      "starts": [],
+      "ends": [],
+      "rewardItems": [],
+      "names": {
+        "zh_TW": "無地圖任務",
+        "en_US": "No Map Quest"
+      },
+      "faction": null,
+      "typeId": 0,
+      "areaId": 0,
+      "rewards": {
+        "experience": 10,
+        "moneyCopper": 5
+      },
+      "uiMapIds": [],
+      "mappedBy": null,
+      "description": null
+    },
+    {
+      "questId": 9900004,
+      "minLevel": 2,
+      "questLevel": 3,
+      "classes": null,
+      "races": null,
+      "skill": null,
+      "prevs": null,
+      "nexts": null,
+      "concurrents": null,
+      "exclusives": null,
+      "starts": null,
+      "ends": null,
+      "rewardItems": null,
+      "names": {
+        "en_US": "Unknown Everything"
+      },
+      "faction": null,
+      "typeId": null,
+      "areaId": 0,
+      "rewards": {
+        "experience": null,
+        "moneyCopper": null
+      },
+      "uiMapIds": [],
+      "mappedBy": null
+    },
+    {
+      "questId": 9900005,
+      "minLevel": 3,
+      "questLevel": 4,
+      "classes": [],
+      "races": [],
+      "skill": {
+        "id": 171,
+        "value": null
+      },
+      "prevs": [],
+      "nexts": [],
+      "concurrents": [],
+      "exclusives": [],
+      "starts": [],
+      "ends": [],
+      "rewardItems": [
+        {
+          "id": 159,
+          "count": null,
+          "choice": true,
+          "source": "official"
+        },
+        {
+          "id": 118,
+          "count": 3,
+          "choice": false,
+          "source": "official"
+        }
+      ],
+      "names": {
+        "en_US": "Null Slots"
+      },
+      "faction": null,
+      "typeId": 0,
+      "areaId": 0,
+      "rewards": {
+        "experience": 1,
+        "moneyCopper": 2
+      },
+      "uiMapIds": [],
+      "mappedBy": null
+    }
+  ],
+  "entities": [
+    {
+      "kind": "npc",
+      "entityId": 9901001,
+      "nameEnUs": "Fixture \"Quoter\" NPC",
+      "nameZhTw": "測試NPC",
+      "spawns": [
+        {
+          "x": 45.34,
+          "y": 60.06,
+          "uiMapId": 1429,
+          "mapName": "Elwynn Forest"
+        },
+        {
+          "x": 12.0,
+          "y": 80.0,
+          "uiMapId": 1453,
+          "mapName": "Stormwind City"
+        }
+      ]
+    },
+    {
+      "kind": "object",
+      "entityId": 9901001,
+      "nameEnUs": "Fixture Object",
+      "nameZhTw": null,
+      "spawns": [
+        {
+          "x": 30.0,
+          "y": 31.5,
+          "uiMapId": 1453,
+          "mapName": "Stormwind City"
+        }
+      ]
+    }
+  ]
+}
