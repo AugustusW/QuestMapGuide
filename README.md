@@ -6,6 +6,10 @@ A quest map companion for WoW Classic-era "Forever" clients: a panel beside the 
 開發中（0.2.0）。資料為離線資料，實際以遊戲為準。授權 GPL v3，見 LICENSE 與 NOTICE。
 Work in progress (0.2.0). The data is offline; the game is always the final authority. Licensed GPL v3, see LICENSE and NOTICE.
 
+- Download: [CurseForge](https://www.curseforge.com/projects/1828685). Support: support@augustusw.com · [Buy me a coffee / 請我喝杯咖啡](https://link.augustusw.com/coffee).
+
+If this addon helps you, a star on the repo helps other players find it. 覺得好用的話，幫這個 repo 按個星，能讓其他玩家更容易找到。
+
 ## 安裝 Install
 
 1. 把整個 `QuestMapGuide` 資料夾複製到遊戲的 `Interface/AddOns/`。
