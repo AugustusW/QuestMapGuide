@@ -26,6 +26,9 @@ Probe.APIS = {
   -- 0.2.0：獎勵物品修飾鍵點擊（Detail.ModifiedItemClick）
   "HandleModifiedItemClick", "ChatEdit_InsertLink", "DressUpItemLink", "IsShiftKeyDown", "IsControlKeyDown",
   "C_Item.RequestLoadItemDataByID",
+  -- 0.3.0：遊戲紀錄（Observe.lua，任務說明／交任務視窗）
+  "GetQuestID", "GetTitleText", "GetObjectiveText", "GetRewardXP", "GetRewardMoney", "GetNumQuestRewards",
+  "GetNumQuestChoices", "GetQuestItemLink", "GetQuestItemInfo", "C_Map.GetBestMapForUnit", "C_Map.GetPlayerMapPosition",
 }
 Probe.TEMPLATES = {
   "BasicFrameTemplateWithInset", "UIPanelButtonTemplate", "UICheckButtonTemplate", "UIPanelScrollFrameTemplate",

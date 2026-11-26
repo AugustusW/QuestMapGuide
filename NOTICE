@@ -11,6 +11,14 @@ Copyright (C) 2026 AugustusW
   授權核對結果：classic-db 為 GPL v3，與本插件相容；其 COPYRIGHT.md 聲明 World of Warcraft 內容的權利屬於 Blizzard Entertainment，本插件與 Blizzard 無關。
   Source commit: 13e933726f386399d9820138fbd1123e7cda86c8; exported 2026-11-23.
   Licence check: classic-db is GPL v3; its COPYRIGHT.md states that World of Warcraft content rights belong to Blizzard Entertainment. This addon is unaffiliated with Blizzard.
+- Questie / QuestieDB（https://github.com/Questie/QuestieDB），授權 GPL v3。
+  本插件的任務資料可能包含取自 QuestieDB 的事實資料：任務起點與交付的 NPC／物件、座標、任務等級、需求等級、種族／職業限制、前置與後續任務。不取其程式碼，也不使用 Questie 名稱與標誌。
+  轉出時的 commit：4377c98；之後的資料包會把實際轉出的 commit 記錄在 QMG_Meta。
+  授權狀態（摘自 QuestieDB 的 LICENSE.md）：Questie 與 QuestieDB 的內容歷史上沒有正式授權；已列名的貢獻者同意以 GPL v3 授權其貢獻；其餘內容在有疑慮時視為「保留所有權利」；Questie 團隊表示不反對依 GPL v3 條款複製與分叉，但無法代表所有歷史貢獻者承諾。其資料另含源自 Wowhead 與玩家回報的條目。
+  Source: Questie / QuestieDB (https://github.com/Questie/QuestieDB), GPL v3. This addon's quest data may include factual data from QuestieDB: quest start and end NPCs and objects, coordinates, quest level, required level, race/class restrictions, prerequisites and follow-ups. No Questie code, name or logo is used. Source commit: 4377c98; later data packs record their exported commit in QMG_Meta.
+  Licence status (summarised from QuestieDB's LICENSE.md): Questie and QuestieDB content historically had no formal licence; the listed contributors agreed to GPL v3 for their contributions; other content is to be treated as "all rights reserved" when in doubt; the Questie team says it does not object to copying or forking under GPL v3 terms but cannot speak for every historic contributor. The data also includes entries derived from Wowhead and from player traces.
+- 遊戲紀錄：玩家自己的遊戲客戶端經由本插件記錄、由作者上傳的遊戲內觀察資料。
+  In-game records: observations recorded by players' own game clients through this addon and uploaded by the author.
 - AugustusW 的人工校正。
 
 本插件與 Blizzard Entertainment 無關。World of Warcraft 相關名稱與內容的權利屬於 Blizzard Entertainment。

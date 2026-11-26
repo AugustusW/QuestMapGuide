@@ -300,7 +300,9 @@ def prepare(data):
     meta = {"schema": SCHEMA, "sourceVersion": data.get("sourceVersion"),
             "officialExportDate": data.get("officialExportDate"), "wagoBuild": data.get("wagoBuild"),
             "exportedAt": data.get("exportedAt"), "env": data.get("env"),
-            "quests": len(quests), "entities": len(entities)}
+            "quests": len(quests), "entities": len(entities),
+            # NOTICE 承諾記錄實際轉出的 Questie commit（Product V294 匯出 sourceVersions；舊匯出沒有就不寫）
+            "questieCommit": (data.get("sourceVersions") or {}).get("questie")}
     meta = {k: v for k, v in meta.items() if v is not None}
     return ids, records, entities, by_map, meta, descs
 

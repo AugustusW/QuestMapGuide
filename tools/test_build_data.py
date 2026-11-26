@@ -102,6 +102,16 @@ def test_meta(tmp_path):
     assert run_lua(out, "QMG_Meta.exportedAt") == "2026-11-23T00:00:00+00:00"
 
 
+def test_meta_records_questie_commit(tmp_path):
+    """NOTICE 承諾：之後的資料包把實際轉出的 Questie commit 記在 QMG_Meta（Product V294 匯出 sourceVersions）。"""
+    data = load_fixture()
+    data["sourceVersions"] = {"cmangos": "fixture-1", "questie": "4377c981ac368d1593ec92788218e0a689a6a02b"}
+    out = build_to(tmp_path, data)
+    assert run_lua(out, "QMG_Meta.questieCommit") == "4377c981ac368d1593ec92788218e0a689a6a02b"
+    out2 = build_to(tmp_path / "old", load_fixture())        # 舊匯出沒有 sourceVersions：不寫這個鍵
+    assert run_lua(out2, "tostring(QMG_Meta.questieCommit)") == "nil"
+
+
 def test_rejects_zh_cn_key():
     d = load_fixture()
     d["quests"][1]["names"]["zh_CN"] = "x"
@@ -372,6 +382,7 @@ local errs, nq, ne, nb = {{}}, 0, 0, 0
 for id, q in pairs(L.Q) do nq = nq + 1; deq(D.quest(id), q, "Q" .. id, errs) end
 for k, e in pairs(L.E) do ne = ne + 1; deq(D.entity(k), e, "E" .. k, errs) end
 for m, l in pairs(L.B) do nb = nb + 1; deq(D.byMap(m), l, "B" .. m, errs) end
+L.M.questieCommit = QMG_Meta.questieCommit  -- 舊格式沒有這個鍵（新增的中繼資料，不影響 Data API）
 deq(QMG_Meta, L.M, "Meta", errs)
 if #D.questIds() ~= nq then errs[#errs + 1] = "questIds 數量 " .. #D.questIds() .. " vs " .. nq end
 if #D.entityKeys() ~= ne then errs[#errs + 1] = "entityKeys 數量" end
@@ -406,7 +417,8 @@ def test_data_api_same_answers_as_before_real_export(tmp_path):
     data = json.loads(REAL_EXPORT.read_text(encoding="utf-8"))
     data["schemaVersion"] = SCHEMA_OF_TEST_EXPORT  # build/export.json 可能還是舊版（無描述）；兩種格式的比對與描述無關
     out = _run_same_answers(tmp_path, data)
-    assert out.startswith("OK 6874 1847 ")
+    # 數量跟著本機的 prod 匯出走（每次重新匯出都會變），不寫死
+    assert out.startswith(f"OK {len(data['quests'])} ")
 
 
 def _mem_delta_kb(lua_file, with_data_lua):

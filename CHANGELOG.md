@@ -1,6 +1,42 @@
 # Changelog
 
-每個版本一段，標題是 `## <版本>`；段內小標用 `###`。發版時 GitHub Release 與 CurseForge 的更新說明取自對應的段落。
+每個版本一段，標題是 `## <版本>`；段內小標用 `###`。從 0.3.0 起英文在上、中文在下，中間用 `---` 分隔。發版時 GitHub Release 與 CurseForge 的更新說明取自對應的段落。
+
+## 0.3.0
+
+### Data update
+
+- The bundled quest data adds a new source, Questie (QuestieDB), which fills in missing quest starts and turn-in NPCs with coordinates. Quests without a start dropped from 2,708 to 343.
+- Merge priority for the quest data: author corrections > in-game records > official > Questie > CMaNGOS classic-db.
+- Map markers now prefer Questie spawn points, which fixes about 340 NPCs near zone borders that were marked on the neighbouring map.
+- Starts, turn-in NPCs and learned Chinese NPC names recorded in game by the author are now merged into the bundled data.
+- Data sources and licence status are in NOTICE; the Questie version used is recorded in `QMG_Meta.questieCommit`.
+
+### In-game records
+
+- When you accept or turn in a quest, the addon records the start and turn-in NPC, your position at the time, the rewards, and any follow-up quest the same NPC offers right after you turn it in. The records stay in your local save file (`QuestMapGuideDB.obs`); the addon sends nothing on its own.
+- Fields missing from the bundled data are filled from your records, and those parts of the quest detail are labelled "(recorded in game)"; follow-ups that mix bundled and recorded quests are labelled "(includes game records)". Values the bundled data already has are never overwritten.
+- Quests that are not in the bundled data appear in the list and in search once you have accepted them.
+- New `/qmg obs`: prints how many quests have been recorded.
+- The author uses their own records to improve the bundled data; if you would like to help, please email support@augustusw.com.
+
+---
+
+### 資料更新
+
+- 內建任務資料加入新的來源 Questie（QuestieDB），補上原本缺少的任務起點與交任務 NPC 及座標。缺起點的任務從 2708 個降到 343 個。
+- 任務資料合併時的優先順序：作者校正 > 遊戲紀錄 > 官方 > Questie > CMaNGOS classic-db。
+- 地圖標記改成優先用 Questie 的生成點，修正約 340 個 NPC 在區域交界處被標到隔壁地圖的問題。
+- 作者在遊戲中實際記錄到的起點、交任務 NPC 與學到的 NPC 中文名稱，也已併入內建資料。
+- 資料來源與授權狀態見 NOTICE；這次 Questie 的版本記在 `QMG_Meta.questieCommit`。
+
+### 遊戲紀錄
+
+- 插件會在你接任務與交任務時，記下任務起點與交任務的 NPC、你當下的位置、獎勵，以及交完任務後同一個 NPC 給的後續任務。記錄只存在本機存檔（`QuestMapGuideDB.obs`），插件不會自行傳送。
+- 內建資料缺少的欄位會用你的遊戲紀錄補上，明細裡補上的段落會標示「（遊戲紀錄）」；後續任務同時有內建與紀錄時標示「（含遊戲紀錄）」。內建資料有的值不會被覆蓋。
+- 內建資料沒有的任務，只要你接過，也會出現在清單與搜尋裡。
+- 新增 `/qmg obs`：顯示目前記錄了幾個任務。
+- 作者用自己的遊戲紀錄補強內建資料；願意一起協助精進資料的玩家，歡迎來信 support@augustusw.com。
 
 ## 0.2.0
 

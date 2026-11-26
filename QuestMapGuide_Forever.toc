@@ -3,7 +3,7 @@
 ## Title-zhTW: 任務地圖指南
 ## Notes: A panel beside the world map listing the quests on the shown map, with start points and completion status (offline data; the game is authoritative). Support: support@augustusw.com
 ## Notes-zhTW: 世界地圖旁列出這張地圖的任務、起點與完成狀態（離線資料，實際以遊戲為準）。問題回報：support@augustusw.com
-## Version: 0.2.0
+## Version: 0.3.0
 ## X-Curse-Project-ID: 1828685
 ## Author: AugustusW
 ## X-Email: support@augustusw.com
@@ -24,6 +24,7 @@ Data.lua
 LoadEnd.lua
 Probe.lua
 Learn.lua
+Observe.lua
 Status.lua
 Filter.lua
 Theme.lua

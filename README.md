@@ -35,6 +35,7 @@ If this addon helps you, a star on the repo helps other players find it. 覺得�
 - 起點列顯示「NPC · 地圖名(x, y)」，整行可點，前面是遊戲的黃色「!」；點起點若在別張地圖，會先切換地圖再標出起點，明細維持開啟。
 - 在遊戲的任務日誌點任務：面板切到那個任務，開啟明細並標出起點（任務不在資料裡就不動作；地圖沒開時，打開地圖再切換）。
 - 學習繁中 NPC 名稱（只在 zhTW 客戶端，見下方「隱私」）。
+- 遊戲紀錄：接任務與交任務時記下起點與交任務 NPC、位置、獎勵與後續任務，用來補內建資料缺的欄位（明細標「（遊戲紀錄）」，內建有的值不覆蓋）；內建沒有的任務接過後也會列出（見下方「隱私」）。
 
 - A panel beside the world map listing the quests on the current zone map. Tabs: open, in log, done, all; the header shows "Available N / M".
 - Each row shows a status icon (available, in progress, completed), quest level with difficulty colour, the starting NPC and coordinates. Rows are one line high; long text is truncated and the row tooltip shows the full text.
@@ -49,14 +50,17 @@ If this addon helps you, a star on the repo helps other players find it. 覺得�
 - The start line shows "NPC · map(x, y)", is clickable as a whole and starts with the game's yellow "!"; selecting a start on another map switches to that map first, then marks it, and the detail stays open.
 - Clicking a quest in the game's quest log switches the panel to that quest, opening the detail and marking its start (quests not in the data are ignored; if the map is closed, the switch happens when it opens).
 - Learns Traditional Chinese NPC names (zhTW clients only; see Privacy below).
+- In-game records: when you accept or turn in a quest, the start and turn-in NPC, your position, the rewards and follow-up quests are recorded and used to fill fields missing from the bundled data (labelled "(recorded in game)" in the detail; bundled values are never overwritten). Quests not in the bundled data are listed once you have accepted them (see Privacy below).
 
 ## 指令 Commands
 
 - `/qmg probe`：確認插件用到的 API、widget 方法與範本在這個客戶端是否存在（包含事件註冊失敗的名單），結果寫入存檔。
 - `/qmg stats`：顯示內建資料的任務筆數、解析時間與記憶體用量。解析超過 150 ms 或記憶體超過 20 MB 會多一行提示。
+- `/qmg obs`：顯示目前遊戲紀錄記了幾個任務。
 
 - `/qmg probe`: checks which APIs, widget methods and templates the addon uses exist on this client (including any events that failed to register), and saves the result.
 - `/qmg stats`: prints the quest count, parse time and memory use of the bundled data. A second line appears when parsing exceeds 150 ms or memory exceeds 20 MB.
+- `/qmg obs`: prints how many quests the in-game records cover.
 
 ## 隱私 Privacy
 
@@ -64,26 +68,31 @@ If this addon helps you, a star on the repo helps other players find it. 覺得�
 
 On Traditional Chinese (zhTW) clients, when the player points at or targets an NPC, the addon saves that NPC's ID and the Traditional Chinese name shown by the game into the save file (`QuestMapGuideDB.npcNames`: name, times seen, first and last time). Only NPCs that exist in the bundled data are recorded, at most once per 60 seconds per NPC; players, pets and vehicles are not recorded. Clients in other languages record nothing. The names stay in the local save file and the addon sends nothing on its own; they are used only when the player chooses to upload the save file to improve the shared data. Learned names are shown first on zhTW clients in the panel, the quest detail and the map markers.
 
+所有語系的客戶端都會在接任務與交任務時記錄遊戲紀錄（`QuestMapGuideDB.obs`，帳號共用）：任務 ID、名稱與目標說明、起點與交任務的 NPC 或物件（ID 與名稱）、當下玩家所在的地圖與座標、獎勵（經驗值、金錢、物品）、交完任務後同一個 NPC 給的後續任務，以及第一次與最近一次的時間。不記錄聊天、其他玩家或角色資訊。和 NPC 名稱一樣只存在本機存檔，插件不會自行傳送，只有玩家自己選擇上傳存檔時才會用來補充共用資料。作者用自己的遊戲紀錄補強內建資料；願意一起協助精進資料的玩家，歡迎來信 support@augustusw.com。
+
+On clients in every language, the addon records in-game observations when you accept or turn in a quest (`QuestMapGuideDB.obs`, shared across the account): the quest ID, title and objective text, the start and turn-in NPC or object (ID and name), the map and coordinates where you were standing, the rewards (experience, money, items), any follow-up quest the same NPC offers right after the turn-in, and the first and last time seen. Chat, other players and character details are not recorded. Like the NPC names, this stays in the local save file and the addon sends nothing on its own; it is used only when the player chooses to upload the save file to improve the shared data. The author uses their own records to improve the bundled data; if you would like to help, please email support@augustusw.com.
+
 ## 存檔位置 SavedVariables
 
-`/qmg probe` 的結果與學到的 NPC 名稱在 `/reload` 或登出後寫入：
+`/qmg probe` 的結果、學到的 NPC 名稱與遊戲紀錄在 `/reload` 或登出後寫入：
 
 `World of Warcraft/<版本資料夾>/WTF/Account/<帳號>/SavedVariables/QuestMapGuide.lua`
 
 回報測試結果時，請把這個檔案一併提供。
 
-The `/qmg probe` result and the learned NPC names are written after `/reload` or logout to the file above (`<version folder>` is the client folder, `<account>` is the account folder). Please include this file when reporting test results.
+The `/qmg probe` result, the learned NPC names and the in-game records are written after `/reload` or logout to the file above (`<version folder>` is the client folder, `<account>` is the account folder). Please include this file when reporting test results.
 
 ## 資料來源 Data
 
 | 欄位 Field | 值 Value |
 |---|---|
 | sourceVersion | 13e933726f386399d9820138fbd1123e7cda86c8 |
-| officialExportDate | 2026-11-24T18:31:31.932655+00:00 |
-| wagoBuild | 1.60.1.71091 |
-| exportedAt | 2026-11-24T18:31:34.384784+00:00 |
-| quests | 6874 |
-| entities | 1847 |
+| questieCommit | 4377c981ac368d1593ec92788218e0a689a6a02b |
+| officialExportDate | 2026-11-26T04:15:57.30567+00:00 |
+| wagoBuild | 1.60.1.71139 |
+| exportedAt | 2026-11-26T04:16:01.446859+00:00 |
+| quests | 6885 |
+| entities | 2743 |
 
 以上取自 `Data/Forever/Quests.lua` 的 `QMG_Meta`。資料來源與授權聲明見 NOTICE。
 Values come from `QMG_Meta` in `Data/Forever/Quests.lua`. Data sources and licence notes are in NOTICE.

@@ -231,10 +231,14 @@ function build()
     add(t)
   end
 
+  local obs = q.obs or {}
+  local function fromGame() add("  " .. L("fromGame"), { r = MUTED[1], g = MUTED[2], b = MUTED[3] }) end
   head("startAt")
   entityLines(q.s, mapId, true)
+  if obs.s then fromGame() end
   head("endAt")
   entityLines(q.e, mapId)
+  if obs.e then fromGame() end
   relLines("prereq", q.prev)
 
   -- 描述：沒有就整段不出現
@@ -272,6 +276,7 @@ function build()
     if unkRi then add("  " .. L("itemsLabel") .. L("colon") .. L("unknown"), { r = MUTED[1], g = MUTED[2], b = MUTED[3] }) end
     if #choose > 0 then add(L("chooseOne")); itemRows(choose) end
     if #fixed > 0 then add(L("receive")); itemRows(fixed) end
+    if obs.ri then fromGame() end
     if moneyStr or hasXp or unkXp then
       add(L("alsoGet"))
       if moneyStr then add("  " .. moneyStr, { kind = "money" }) end
@@ -283,6 +288,12 @@ function build()
   end
 
   relLines("nextQuests", q.next)
+  if obs.next then
+    -- 後續是聯集：全部來自遊戲紀錄標「遊戲紀錄」，混著內建的標「含遊戲紀錄」
+    local all = true
+    for _, n in ipairs(q.next) do if not obs.next[n] then all = false; break end end
+    add("  " .. L(all and "fromGame" or "fromGameSome"), { r = MUTED[1], g = MUTED[2], b = MUTED[3] })
+  end
   if q.conc and #q.conc > 0 then relLines("concurrent", q.conc) end
   if q.excl and #q.excl > 0 then relLines("exclusive", q.excl) end
 
