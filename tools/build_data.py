@@ -6,7 +6,7 @@
 輸出（Lua 5.1 全域）：
   QMG_Meta   匯出資訊（小表，載入後直接可讀）
   QMG_Data   打包資料，由 Data.lua 建索引後以 ns.Data 提供讀取；Panel／Pins 不直接碰它
-             {fmt=格式版本, q=任務, e=entity, m=地圖索引, d=任務描述}，每一組是 {ix=索引字串, s=資料字串}：
+             {fmt=格式版本, q=任務, e=entity, m=地圖索引, d=任務描述, g=副本, x=副本索引}，每一組是 {ix=索引字串, s=資料字串}：
              s 是一長串依序接起來的記錄，ix 是 "鍵:記錄位元組數,鍵:位元組數,…"（Data.lua 載入時掃一遍成雜湊）。
              記錄只在被讀取時才解碼成表，所以常駐記憶體只有字串本身。
              鍵：任務是 questId 數字；entity 是 "n<id>"（npc）或 "o<id>"（object）——id 會撞，所以加 kind 前綴，
@@ -19,6 +19,8 @@
   s<n>:…     字串，n 是位元組數（內容原樣，不跳脫）
 任務的 prev／next／conc／excl 是純 questId 數字清單（匯出的 {source, questId} 物件在建置時轉換，元素缺整數 questId 即 BuildError）。
 欄位為 nil＝未知；空表＝已知為空。輸出不含 source／correction 等來源欄位。
+任務的 dg（V298）：關聯副本 mapId 清單（匯出的 dungeons；沒有副本不寫）。g：副本 mapId → {n=繁中名, t="dungeon"|"raid", lv=建議等級或缺,
+b={首領名…}（依 sortOrder）}；x：副本 mapId → 遞增 questId 清單。匯出沒有頂層 dungeons、或任務指到副本表沒有的 mapId 即 BuildError。
 任務的 h：節慶分類，由匯出的 categoryId（官方任務分類）經 HOLIDAY_CATEGORY 對照：1＝節慶（季節性、新年慶典、仲夏），
 2＝暗月馬戲團；其他分類或 categoryId 為 null／缺欄位時不寫（Lua 端讀到 nil＝一般任務）。categoryId 本身不輸出。
 """
@@ -31,7 +33,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-SCHEMA = 3
+SCHEMA = 5  # V298：AgentSpace 匯出 schemaVersion 5（任務 dungeons、頂層 dungeons 副本表）
 FORMAT = 1  # QMG_Data.fmt；編碼或索引改變時加一，Data.lua 不認得的版本就當沒有資料
 KIND_PREFIX = {"npc": "n", "object": "o"}
 FACTION = {"ALLIANCE": "A", "HORDE": "H"}
@@ -194,6 +196,9 @@ def quest_record(q) -> dict:
     if cat is not None and (not isinstance(cat, int) or isinstance(cat, bool)):
         raise BuildError(f"任務 {q['questId']} categoryId 必須是整數或 null，得到 {cat!r}")
     r["h"] = HOLIDAY_CATEGORY.get(cat)
+    dg = q.get("dungeons")
+    if dg:
+        r["dg"] = sorted({int(m) for m in dg})
     return {k: v for k, v in r.items() if v is not None}
 
 
@@ -287,6 +292,22 @@ def prepare(data):
     dangling = {k for r in records.values() for k in (r.get("s") or []) + (r.get("e") or [])} - set(entities)
     if dangling:
         print(f"警告：{len(dangling)} 個起終點 entity 不在 entities 裡（pins 會缺）", file=sys.stderr)
+    if not isinstance(data.get("dungeons"), list):
+        raise BuildError("匯出缺少頂層 dungeons（schemaVersion 5 必須有副本表）")
+    dungeons, by_dungeon = {}, {}
+    for d in data["dungeons"]:
+        mid = int(d["mapId"])
+        rec = {"n": (d.get("names") or {}).get("zh_TW") or f"副本 #{mid}",
+               "t": "raid" if d.get("instanceType") == "raid" else "dungeon",
+               "b": [b["name"] for b in sorted(d.get("bosses") or [], key=lambda b: (b.get("sortOrder") or 0)) if b.get("name")]}
+        if d.get("recommendedLevel") is not None:
+            rec["lv"] = int(d["recommendedLevel"])
+        dungeons[mid] = rec
+    for qid in ids:
+        for m in records[qid].get("dg") or []:
+            if m not in dungeons:
+                raise BuildError(f"任務 {qid} 的副本 {m} 不在副本表")
+            by_dungeon.setdefault(m, []).append(qid)
     descs = {}
     for q in quests:
         d = description_text(q)
@@ -304,7 +325,7 @@ def prepare(data):
             # NOTICE 承諾記錄實際轉出的 Questie commit（Product V294 匯出 sourceVersions；舊匯出沒有就不寫）
             "questieCommit": (data.get("sourceVersions") or {}).get("questie")}
     meta = {k: v for k, v in meta.items() if v is not None}
-    return ids, records, entities, by_map, meta, descs
+    return ids, records, entities, by_map, meta, descs, dungeons, by_dungeon
 
 
 def _lua_meta(meta) -> str:
@@ -313,7 +334,7 @@ def _lua_meta(meta) -> str:
 
 def build_quests_lua(data):
     """回傳 (文字片段 list, 每段的資料字串位元組數 list)。"""
-    ids, records, entities, by_map, meta, descs = prepare(data)
+    ids, records, entities, by_map, meta, descs, dungeons, by_dungeon = prepare(data)
     head = ("-- 由 tools/build_data.py 產生，請勿手改。資料來源與授權見 NOTICE。\n"
             "-- 打包格式（說明見 tools/build_data.py 開頭）：程式不直接讀 QMG_Data，一律走 Data.lua 的 ns.Data。\n"
             "-- 欄位 nil = 未知，空表 = 已知為空。位置式欄位（解碼後）：\n"
@@ -326,7 +347,9 @@ def build_quests_lua(data):
     groups = (("q", "任務", [(qid, records[qid]) for qid in ids]),
               ("e", "entity", [(k, entities[k]) for k in sorted(entities)]),
               ("m", "ByMap", [(m, by_map[m]) for m in sorted(by_map)]),
-              ("d", "描述", [(qid, descs[qid]) for qid in ids if qid in descs]))
+              ("d", "描述", [(qid, descs[qid]) for qid in ids if qid in descs]),
+              ("g", "副本", [(m, dungeons[m]) for m in sorted(dungeons)]),
+              ("x", "ByDungeon", [(m, by_dungeon[m]) for m in sorted(by_dungeon)]))
     for var, what, items in groups:
         ix, body = pack(items, what)
         parts.append(f"QMG_Data.{var} = {{\nix={lua_str(ix)},\ns={lua_str(body)}}}\n")

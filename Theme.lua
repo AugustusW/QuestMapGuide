@@ -47,6 +47,8 @@ Theme.TAB_ON_EDGE = rgb("4d0f08", 1)
 Theme.TAB_ON_TEXT = rgb("f6ebcc")       -- 選中：淺字
 Theme.TAB_OFF_BG = rgb("fff6dc", 0.28)  -- 未選：半透明淺底
 Theme.TAB_OFF_EDGE = rgb("6b4a2a", 1)   -- 未選：褐框
+-- 副本選單：不透明羊皮紙底（實機回報半透明底跟後面的清單疊在一起難選）
+Theme.MENU_BG = rgb("efe0b9", 1)
 Theme.TAB_OFF_TEXT = Theme.MUTED
 Theme.BTN_BG = rgb("fff6dc", 0.30)      -- 「回清單」按鈕底
 Theme.BTN_EDGE = Theme.TAB_OFF_EDGE

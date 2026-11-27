@@ -36,11 +36,12 @@ local function setup()
     GetNumQuestChoices = function() return #qw.choices end,
     GetQuestItemLink = function(kind, i)
       local it = (kind == "reward" and qw.rewards or qw.choices)[i]
-      return it and ("|cffffffff|Hitem:" .. it[1] .. "::|h[x]|h|r")
+      return it and not it.noLink and ("|cffffffff|Hitem:" .. it[1] .. "::|h[x]|h|r") or nil
     end,
+    -- 遊戲回傳：name, texture, count, quality, isUsable, itemID
     GetQuestItemInfo = function(kind, i)
       local it = (kind == "reward" and qw.rewards or qw.choices)[i]
-      return "x", 1, it and it[2]
+      return "x", 1, it and it[2], 1, true, it and it[1]
     end,
     UnitGUID = function(u) if u == "npc" or u == "questnpc" then return qw.guid end end,
     UnitName = function(u) if u == "npc" or u == "questnpc" then return qw.name end end,
@@ -69,7 +70,7 @@ H.fire("QUEST_DETAIL")
 H.fire("QUEST_COMPLETE")
 local o = QuestMapGuideDB.obs.quests[9900005]
 H.check(o ~= nil, "記下任務")
-H.eq(QuestMapGuideDB.obs.v, 1, "格式版本 1")
+H.eq(QuestMapGuideDB.obs.v, 2, "格式版本 2（V298）")
 H.eq(o.title, "遊戲任務", "任務名稱")
 H.eq(o.starts.c2986.map, 1500, "起點地圖")
 H.eq(o.starts.c2986.x, 0.5389, "起點 x")
@@ -155,3 +156,9 @@ H.qw.qid = SECRET
 H.fire("QUEST_DETAIL")
 H.check(true, "保密 questId 不出錯")
 H.printed = {}
+
+-- 實機（2026-11-28 存檔 1136 霜喉雪人）：固定獎勵連結拿不到 → 改用 GetQuestItemInfo 第 6 個回傳的物品 ID
+setup()
+H.qw.rewards = { { 6720, 1, noLink = true } }
+H.fire("QUEST_DETAIL")
+H.eq(QuestMapGuideDB.obs.quests[9900005].rewards.items[6720], 1, "連結拿不到改用 ItemInfo 的物品 ID")

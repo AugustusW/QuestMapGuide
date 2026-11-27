@@ -261,27 +261,26 @@ do
   H.check(bb._width >= bb.fs:GetStringWidth() + 12, "按鈕寬度包住文字")
 end
 
--- ===== 7. 顯示已完成只在全部分頁可用 =====
+-- ===== 7. 顯示已完成：每個分頁都能勾（2026-11-28 使用者選 A；原本非全部分頁灰掉，實機回報像壞掉） =====
+-- 在其他分頁勾下去 → 設定打開並切到全部分頁；取消勾 → 設定關掉、留在原分頁
 do
   local ns = setup()
   local T = ns.Theme
   local P = ns.Panel
   P.Refresh(1429)
-  P.SetCheck("showDone", true)
   P.SetTab("open")
   local c = P.CheckButton("showDone")
-  H.eq(c:IsEnabled(), false, "未接分頁：顯示已完成停用")
-  sameColor(c.label._tc, "85775f", T, "停用標籤灰色")
-  H.eq(c:GetChecked(), true, "停用時勾選狀態保留")
-  H.eq(ns.Filter.get("showDone"), true, "設定沒被改掉")
-  H.eq(P.CheckButton("exclClass"):IsEnabled(), true, "其他勾選框不受影響")
-  P.SetTab("all")
-  H.eq(c:IsEnabled(), true, "全部分頁：啟用")
-  sameColor(c.label._tc, "2e1f0f", T, "啟用：一般文字色")
-  P.SetTab("done")
-  H.eq(c:IsEnabled(), false, "已完成分頁：停用")
+  H.eq(c:IsEnabled(), true, "未接分頁：顯示已完成可以勾")
+  sameColor(c.label._tc, "2e1f0f", T, "標籤一般文字色（不灰）")
+  c:SetChecked(true); c._scripts.OnClick(c)
+  H.eq(ns.Filter.get("showDone"), true, "勾下去：設定打開")
+  H.eq(P.Tab(), "all", "勾下去：切到全部分頁")
   P.SetTab("log")
-  H.eq(c:IsEnabled(), false, "日誌中分頁：停用")
+  H.eq(c:GetChecked(), true, "其他分頁顯示目前設定")
+  c:SetChecked(false); c._scripts.OnClick(c)
+  H.eq(ns.Filter.get("showDone"), false, "取消勾：設定關掉")
+  H.eq(P.Tab(), "log", "取消勾：留在原分頁")
+  H.eq(P.CheckButton("exclClass"):IsEnabled(), true, "其他勾選框不受影響")
 end
 
 -- ===== 審查修正 =====
@@ -356,25 +355,11 @@ do
   H.eq(ns.L("backToList"), "< Back to list", "前綴在語系字串")
 end
 
--- 8. 載入時就還原存檔的分頁：非全部分頁一開始就停用；存的是全部則啟用
+-- 8. 載入時就還原存檔的分頁與勾選狀態；任何分頁都可勾
 do
   local ns = setup({ charDb = { filter = { tab = "log", showDone = true } } })
   local c = ns.Panel.CheckButton("showDone")
   H.eq(ns.Panel.Tab(), "log", "還原存檔分頁")
-  H.eq(c:IsEnabled(), false, "載入時非全部分頁：顯示已完成已停用")
+  H.eq(c:IsEnabled(), true, "載入時非全部分頁也可勾")
   H.eq(c:GetChecked(), true, "載入時勾選狀態照存檔")
-  ns = setup({ charDb = { filter = { tab = "all" } } })
-  H.eq(ns.Panel.CheckButton("showDone"):IsEnabled(), true, "載入時全部分頁：啟用")
-end
--- 地圖縮小（非區域地圖）時切分頁也會切換啟用狀態
-do
-  local ns = setup()
-  _G.C_Map = { GetMapInfo = function(id) return { mapID = id, mapType = 2 } end }
-  ns.Panel.Refresh(1414)
-  H.check(ns.Panel.Message() ~= nil, "縮小地圖：只顯示提示")
-  local c = ns.Panel.CheckButton("showDone")
-  ns.Panel.SetTab("all")
-  H.eq(c:IsEnabled(), true, "縮小地圖切到全部：啟用")
-  ns.Panel.SetTab("open")
-  H.eq(c:IsEnabled(), false, "縮小地圖切到未接：停用")
 end

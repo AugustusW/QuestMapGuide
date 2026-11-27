@@ -113,9 +113,24 @@ function Core.slash.stats()
   end
 end
 
--- 收納按鈕（TOC AddonCompartmentFunc）。面板在後續 task 接上
+-- 收納按鈕（TOC AddonCompartmentFunc，小地圖右上角的插件選單）：點了開關世界地圖（面板在地圖旁邊）。
+-- 2026-11-28 實機回報：原本只印 /qmg 用法，點了像沒反應。ToggleWorldMap 未探測：有就用（包 pcall），
+-- 沒有或出錯就直接開關 WorldMapFrame
 function QuestMapGuide_OnAddonCompartmentClick()
-  SlashCmdList.QUESTMAPGUIDE("")
+  if type(ToggleWorldMap) == "function" and pcall(ToggleWorldMap) then return end   -- 出錯就退回直接開關
+  local wm = _G.WorldMapFrame
+  if type(wm) ~= "table" or type(wm.IsShown) ~= "function" then return end
+  if wm:IsShown() then wm:Hide() else wm:Show() end
 end
-function QuestMapGuide_OnAddonCompartmentEnter() end
-function QuestMapGuide_OnAddonCompartmentLeave() end
+function QuestMapGuide_OnAddonCompartmentEnter(_, button)
+  local tip = _G.GameTooltip
+  if type(tip) ~= "table" or type(tip.AddLine) ~= "function" then return end
+  if type(tip.SetOwner) == "function" then pcall(tip.SetOwner, tip, button or _G.UIParent, "ANCHOR_LEFT") end
+  tip:AddLine(ns.L("panelTitle"))
+  tip:AddLine(ns.L("compartmentHint"))
+  tip:Show()
+end
+function QuestMapGuide_OnAddonCompartmentLeave()
+  local tip = _G.GameTooltip
+  if type(tip) == "table" and type(tip.Hide) == "function" then tip:Hide() end
+end

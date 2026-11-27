@@ -40,6 +40,25 @@ local CHECKS = { "exclClass", "exclProf", "exclFaction", "showDone", "showLow", 
 local Filter = ns.Filter
 local questName = Filter.name
 
+-- ── V298 副本指南 ──────────────────────────────────────────────────────────────
+-- pick：選單選的副本 mapId（nil＝目前地圖：人在認得的副本裡就自動顯示那個副本）；guide：這次 Refresh 顯示的副本（nil＝一般地圖清單）
+-- 選擇不存檔，面板關掉就回到目前地圖
+local pick, guide = nil, nil
+local bossOffset = 0
+local BOSS_LINES = 5
+local bossText, bossArea, dungeonButton, menuFrame
+local menuButtons = {}
+
+local function instanceDungeon()
+  if type(IsInInstance) ~= "function" or type(GetInstanceInfo) ~= "function" then return nil end
+  local okIn, inside = pcall(IsInInstance)
+  if not okIn or ns.Core.secret(inside) or inside ~= true then return nil end   -- 先判保密再比較
+  local r = { pcall(GetInstanceInfo) }
+  local id = r[1] and r[9]
+  if type(id) ~= "number" or ns.Core.secret(id) then return nil end
+  return ns.Data.dungeon(id) and id or nil
+end
+
 -- 起點：s 的第一個 entity 在這張地圖上的第一個 spawn。
 -- 回傳 npc 名稱, x, y, 第一個有 entity 的起點 spawn 的地圖 id（搜尋結果的地圖名用；沒有 spawn 就 nil）
 local function startOn(q, uiMapId)
@@ -127,7 +146,18 @@ end
 local function updateChrome()
   if not Panel.frame then return end
   local cur = Panel.Tab()
-  if search ~= "" and not zoom then
+  local d = guide and ns.Data.dungeon(guide)
+  searchBox:SetShown(not d)
+  for _, key in ipairs(CHECKS) do checkButtons[key]:SetShown(not d) end
+  bossText:SetShown(d and true or false)
+  bossArea:SetShown(d and true or false)   -- 不在副本指南時藏起來，否則會吃掉搜尋框那一塊的滾輪
+  dungeonButton.label:SetText(d and d.n or ns.L("dungeonButton"))
+  if d then
+    local kind = ns.L(d.t == "raid" and "groupRaid" or "groupDungeon")
+    local lv = d.lv and ns.L("guideLevel"):format(d.lv) or ns.L("levelUnknown")
+    countText:SetText(ns.L("guideHeader"):format(d.n, kind) .. "  " .. lv)
+    bossText:SetText(table.concat(Panel.BossLines(), "\n"))
+  elseif search ~= "" and not zoom then
     -- 搜尋中：標題改成搜尋結果筆數（被截斷時多一個 +）
     countText:SetText(ns.L("searchCount"):format(#rows) .. (capped and "+" or ""))
   else
@@ -145,11 +175,12 @@ local function updateChrome()
     end
   end
   for _, key in ipairs(CHECKS) do checkButtons[key]:SetChecked(Filter.get(key)) end
-  -- 「顯示已完成」只在全部分頁有作用（inTab）：其他分頁停用並灰掉標籤，勾選狀態與設定不動
+  if Panel.MenuShown() then Panel.ShowMenu(true) end
+  -- 「顯示已完成」每個分頁都能勾（2026-11-28 使用者選 A：原本非全部分頁灰掉，實機回報像壞掉）；
+  -- 只在全部分頁有作用，所以在其他分頁勾下去會切到全部分頁（Panel.SetCheck）
   local sd = checkButtons.showDone
-  local ink = (cur == "all") and Theme.INK or Theme.DISABLED
-  if cur == "all" then sd:Enable() else sd:Disable() end
-  sd.label:SetTextColor(ink[1], ink[2], ink[3])
+  sd:Enable()
+  sd.label:SetTextColor(Theme.INK[1], Theme.INK[2], Theme.INK[3])
 end
 
 -- 面板高度扣掉上方區域與頁尾後放得下幾列（至少 1、至多 VISIBLE）
@@ -235,8 +266,13 @@ local function matches(e)
   return false
 end
 
+-- 副本指南藏了勾選框：「顯示」類設定（低等、節慶、已完成）一律當作打開，否則高等玩家看低等副本會全空又沒得改
+-- （審查 2026-11-28）；排除職業／陣營／專業照使用者設定
+local GUIDE_OPTS = { showLow = true, showHoliday = true }
+local function showDoneNow() return guide ~= nil or Filter.get("showDone") end
+
 local function inTab(e, tab)
-  if tab == "all" then return e.status ~= "done" or Filter.get("showDone") end
+  if tab == "all" then return e.status ~= "done" or showDoneNow() end
   return e.status == tab
 end
 
@@ -274,7 +310,8 @@ function Panel.InvalidateIndex() index = nil; Filter.ResetSteps() end
 
 -- 空狀態文字：依分頁
 local function emptyMessage(tab)
-  if search ~= "" then return ns.L("panelNoMatch") end
+  if guide and #entries == 0 then return ns.L("guideEmpty") end
+  if search ~= "" and not guide then return ns.L("panelNoMatch") end
   if tab == "log" then return ns.L("panelNoLog") end
   if tab == "done" then return ns.L("panelNoDone") end
   if tab == "open" and counts.done > 0 then return ns.L("panelAllDone") end
@@ -325,7 +362,7 @@ local function applyView(keepOffset)
   local tab = Panel.Tab()
   rows, message, capped = {}, nil, false
   if not keepOffset then offset = 0 end
-  if search ~= "" then
+  if search ~= "" and not guide then   -- 副本指南只列這個副本的任務，不做全域搜尋
     rows = searchAll(tab)
   else
     for _, e in ipairs(entries) do
@@ -371,6 +408,7 @@ end
 -- 勾選框改變：存檔後重算
 function Panel.SetCheck(key, value)
   Filter.set(key, value and true or false)
+  if key == "showDone" and value and Panel.Tab() ~= "all" then Filter.set("tab", "all") end   -- 只在全部分頁有作用：切過去
   if curMap then Panel.Refresh(curMap) else updateChrome() end
 end
 
@@ -382,18 +420,28 @@ function Panel.Refresh(uiMapId, keepOffset)
   curMap, stale = uiMapId, false
   zoom = false
   Filter.reload()
-  local info = uiMapId and C_Map.GetMapInfo(uiMapId)
-  if not info or info.mapType ~= ZONE_MAP_TYPE then
-    zoom = true
-    message = ns.L("panelZoom")
-    render()
-    return
+  local before = guide
+  guide = pick or instanceDungeon()
+  if guide ~= before then bossOffset = 0 end
+  local list
+  if guide then
+    list = ns.Data.byDungeon(guide)
+  else
+    local info = uiMapId and C_Map.GetMapInfo(uiMapId)
+    if not info or info.mapType ~= ZONE_MAP_TYPE then
+      zoom = true
+      message = ns.L("panelZoom")
+      render()
+      return
+    end
+    list = ns.Data.byMap(uiMapId)
   end
-  local showDone = Filter.get("showDone")
-  for _, id in ipairs(ns.Data.byMap(uiMapId)) do
+  local showDone = showDoneNow()
+  local opts = guide and GUIDE_OPTS or nil
+  for _, id in ipairs(list) do
     local q = ns.Data.quest(id)
-    if q and Filter.visible(id, nil, q, ns.Status.of(id)) then
-      local e = buildEntry(id, q, uiMapId, false)
+    if q and Filter.visible(id, opts, q, ns.Status.of(id)) then
+      local e = buildEntry(id, q, guide and nil or uiMapId, guide and true or false)
       local st = e.status
       if st ~= "open" then counts[st] = counts[st] + 1 end
       if st == "open" then
@@ -424,6 +472,133 @@ function Panel.Capped() return capped end
 function Panel.Message() return message end
 function Panel.Offset() return offset end
 
+-- ── 副本指南 API ──
+function Panel.Guide() return guide end
+
+-- 首領文字（每行「n. 名稱」）：首領區只放得下 BOSS_LINES 行（實機一行約 15px、區高 88；
+-- 2026-11-27 達拉然城 9 首領排 7 行壓到分頁）。放得下就全列；放不下第一行是「首領 N（滾輪看其餘 M 個）」，
+-- 其下列 BOSS_LINES - 1 個，滾輪捲動；沒有首領一行說明
+function Panel.BossLines()
+  local d = guide and ns.Data.dungeon(guide)
+  if not d then return {} end
+  local b = d.b or {}
+  if #b == 0 then return { ns.L("bossesNone") } end
+  local out = {}
+  if #b <= BOSS_LINES then
+    for i = 1, #b do out[#out + 1] = i .. ". " .. b[i] end
+    return out
+  end
+  local n = BOSS_LINES - 1
+  local maxOff = #b - n
+  if bossOffset > maxOff then bossOffset = maxOff end
+  local rest = #b - (bossOffset + n)
+  out[1] = ns.L("bossesTitle"):format(#b) .. (rest > 0 and ns.L("bossesMore"):format(rest) or "")
+  for i = bossOffset + 1, bossOffset + n do out[#out + 1] = i .. ". " .. b[i] end
+  return out
+end
+
+function Panel.ScrollBosses(delta)
+  bossOffset = math.max(0, bossOffset - delta)
+  if Panel.frame then updateChrome() end
+end
+
+-- 選單項目：目前地圖、地城（依等級）、團隊副本（依等級）；{label, id?, lv?, header?, current?}
+function Panel.MenuItems()
+  local items = { { label = ns.L("menuCurrent"), current = pick == nil } }
+  local lastT
+  for _, d in ipairs(ns.Data.dungeons()) do
+    if d.t ~= lastT then
+      lastT = d.t
+      items[#items + 1] = { label = ns.L(d.t == "raid" and "groupRaid" or "groupDungeon"), header = true }
+    end
+    items[#items + 1] = { label = d.n, id = d.id, lv = d.lv and tostring(d.lv) or ns.L("levelUnknown"), current = pick == d.id }
+  end
+  return items
+end
+
+function Panel.PickDungeon(mapId)
+  pick = mapId and ns.Data.dungeon(mapId) and mapId or nil
+  if menuFrame then menuFrame:Hide() end
+  Panel.Refresh(curMap)
+end
+Panel.ShowDungeon = Panel.PickDungeon
+
+function Panel.MenuShown() return menuFrame and menuFrame:IsShown() or false end
+
+-- 選單：面板內的簡單清單框（不用遊戲的下拉元件，羊皮紙上外觀一致）；項目按鈕依需要建立、重用。
+-- 實機回報（2026-11-27）：54 項會超出面板 → 最多顯示 MENU_ROWS 列，滾輪捲動；
+-- 遊戲字型沒有 ✓ 字元（顯示成方框）→ 目前選的那項用勾勾材質
+Panel.MENU_ROWS = 22
+Panel.menuButtons = menuButtons   -- 測試用
+local menuOffset = 0
+local MENU_ROW = 16
+
+function Panel.ShowMenu(keep)
+  if not menuFrame then return end
+  if not keep and menuFrame:IsShown() then menuFrame:Hide(); return end
+  local items = Panel.MenuItems()
+  local rows = math.min(#items, Panel.MENU_ROWS)
+  local maxOff = #items - rows
+  if not keep then
+    -- 剛打開：讓目前選的那項落在可見範圍內
+    menuOffset = 0
+    for i, it in ipairs(items) do
+      if it.current and i > rows then menuOffset = i - rows end
+    end
+  end
+  if menuOffset > maxOff then menuOffset = maxOff end
+  if menuOffset < 0 then menuOffset = 0 end
+  for i = 1, rows do
+    local it = items[i + menuOffset]
+    local b = menuButtons[i]
+    if not b then
+      b = CreateFrame("Button", nil, menuFrame)
+      b:SetSize(WIDTH - 40, MENU_ROW)
+      b.text = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+      b.text:SetJustifyH("LEFT")
+      b.lv = b:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+      b.lv:SetPoint("RIGHT", b, "RIGHT", -6, 0)
+      b.check = b:CreateTexture(nil, "OVERLAY")
+      b.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
+      b.check:SetVertexColor(Theme.CHECK[1], Theme.CHECK[2], Theme.CHECK[3])
+      b.check:SetSize(14, 14)
+      b.check:SetPoint("LEFT", b, "LEFT", 0, 0)
+      b:EnableMouseWheel(true)
+      b:SetScript("OnMouseWheel", function(_, delta) Panel.ScrollMenu(delta) end)
+      b:SetScript("OnClick", function(self) if not self.header then Panel.PickDungeon(self.id) end end)
+      menuButtons[i] = b
+    end
+    b:SetPoint("TOPLEFT", menuFrame, "TOPLEFT", 6, -6 - (i - 1) * MENU_ROW)
+    b.id, b.header = it.id, it.header
+    b.text:SetText(it.label)
+    local c = it.header and Theme.HEAD or Theme.INK
+    b.text:SetTextColor(c[1], c[2], c[3])
+    b.text:SetPoint("LEFT", b, "LEFT", it.header and 2 or 16, 0)
+    b.lv:SetText(it.lv or "")
+    b.check:SetShown(it.current and true or false)
+    b:Show()
+  end
+  for i = rows + 1, #menuButtons do menuButtons[i]:Hide() end
+  menuFrame.more:SetText(maxOff > 0 and ns.L("menuScroll"):format(menuOffset + 1, menuOffset + rows, #items) or "")
+  menuFrame:SetHeight(12 + rows * MENU_ROW + (maxOff > 0 and MENU_ROW or 0))
+  menuFrame:Show()
+end
+
+-- 滾輪：delta 1 往上、-1 往下
+function Panel.ScrollMenu(delta)
+  menuOffset = menuOffset - delta
+  if menuFrame and menuFrame:IsShown() then Panel.ShowMenu(true) end
+end
+
+-- 目前看得到的選單項目文字（測試用）
+function Panel.MenuVisible()
+  local out = {}
+  for _, b in ipairs(menuButtons) do
+    if b:IsShown() then out[#out + 1] = b.text:GetText() end
+  end
+  return out
+end
+
 function Panel.Select(questId)
   if ns.Pins and ns.Pins.Show then ns.Pins.Show(questId) end
   if ns.Detail and ns.Detail.Open then ns.Detail.Open(questId) end
@@ -444,6 +619,25 @@ local function build()
   title:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -10)
   title:SetText(ns.L("panelTitle"))
   title:SetTextColor(Theme.HEAD[1], Theme.HEAD[2], Theme.HEAD[3])
+
+  -- V298 副本選單按鈕（標題列右側）
+  dungeonButton = CreateFrame("Button", nil, f)
+  dungeonButton:SetSize(120, 18)
+  dungeonButton:SetPoint("TOPRIGHT", f, "TOPRIGHT", -12, -10)
+  dungeonButton.box = Theme.box(dungeonButton)
+  Theme.boxColor(dungeonButton.box, Theme.TAB_OFF_BG, Theme.TAB_OFF_EDGE)
+  dungeonButton.label = dungeonButton:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  dungeonButton.label:SetPoint("CENTER", dungeonButton, "CENTER", -7, 0)
+  dungeonButton.label:SetWidth(96)
+  -- 下拉箭頭用材質：遊戲字型沒有 ▾ 字元（實機顯示成方框）
+  dungeonButton.arrow = dungeonButton:CreateTexture(nil, "OVERLAY")
+  dungeonButton.arrow:SetTexture("Interface\\ChatFrame\\UI-ChatIcon-ScrollDown-Up")
+  dungeonButton.arrow:SetSize(16, 16)
+  dungeonButton.arrow:SetPoint("RIGHT", dungeonButton, "RIGHT", -1, 0)
+  dungeonButton.label:SetWordWrap(false)
+  dungeonButton.label:SetTextColor(Theme.INK[1], Theme.INK[2], Theme.INK[3])
+  dungeonButton:SetScript("OnClick", function() Panel.ShowMenu() end)
+  Panel.dungeonButton = dungeonButton   -- 測試用
 
   countText = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   countText:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -32)
@@ -514,6 +708,39 @@ local function build()
   tabLine:SetSize(WIDTH, 1)
   tabLine:SetColorTexture(Theme.TAB_OFF_EDGE[1], Theme.TAB_OFF_EDGE[2], Theme.TAB_OFF_EDGE[3], 1)
 
+  -- V298 副本指南的首領區：佔用搜尋框與勾選框的位置（副本指南時那兩者藏起來）；滾輪捲動首領
+  bossArea = CreateFrame("Frame", nil, f)
+  Panel.bossArea = bossArea   -- 測試用
+  bossArea:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -50)
+  bossArea:SetSize(WIDTH - 24, 88)
+  bossArea:EnableMouseWheel(true)
+  bossArea:SetScript("OnMouseWheel", function(_, delta) Panel.ScrollBosses(delta) end)
+  bossText = bossArea:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  bossText:SetPoint("TOPLEFT", bossArea, "TOPLEFT", 0, 0)
+  bossText:SetWidth(WIDTH - 24)
+  bossText:SetJustifyH("LEFT")
+  bossText:SetTextColor(Theme.INK[1], Theme.INK[2], Theme.INK[3])
+  bossText:Hide()
+
+  -- V298 副本選單清單框（按鈕下方展開，蓋在面板內容上）
+  menuFrame = CreateFrame("Frame", nil, f)
+  menuFrame:SetPoint("TOPRIGHT", dungeonButton, "BOTTOMRIGHT", 0, -2)
+  menuFrame:SetWidth(WIDTH - 28)
+  menuFrame:SetFrameStrata("DIALOG")   -- 蓋在面板內容（HIGH）上
+  menuFrame:EnableMouse(true)
+  menuFrame.box = Theme.box(menuFrame)
+  Theme.boxColor(menuFrame.box, Theme.MENU_BG, Theme.TAB_OFF_EDGE)
+  menuFrame:EnableMouseWheel(true)
+  menuFrame:SetScript("OnMouseWheel", function(_, delta) Panel.ScrollMenu(delta) end)
+  menuFrame.more = menuFrame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+  menuFrame.more:SetPoint("BOTTOMRIGHT", menuFrame, "BOTTOMRIGHT", -8, 5)
+  menuFrame:Hide()
+  Panel.menuFrame = menuFrame   -- 測試用
+  f:HookScript("OnHide", function()
+    menuFrame:Hide()
+    if pick ~= nil then pick = nil; stale = true end   -- 選擇不存檔：重開地圖回到目前地圖
+  end)
+
   msgText = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
   msgText:SetPoint("TOPLEFT", f, "TOPLEFT", 12, -172)
   msgText:SetWidth(WIDTH - 24)
@@ -576,7 +803,11 @@ local function build()
     b:SetScript("OnLeave", function(self) setHover(self, false); GameTooltip:Hide() end)
     -- 面板或地圖被藏起來時不一定有 OnLeave：清掉懸停，再顯示時不殘留反白
     b:SetScript("OnHide", function(self) setHover(self, false) end)
-    b:SetScript("OnClick", function(self) if self.questId then Panel.Select(self.questId) end end)
+    b:SetScript("OnClick", function(self)
+      if not self.questId then return end
+      if ns.Detail and ns.Detail.QuestLinkClick and ns.Detail.QuestLinkClick(self.questId) then return end   -- Shift：貼任務連結
+      Panel.Select(self.questId)
+    end)
     b:Hide()
     buttons[i] = b
   end

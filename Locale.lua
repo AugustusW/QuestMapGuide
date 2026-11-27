@@ -3,6 +3,7 @@ local _, ns = ...
 
 local zhTW = {
   panelTitle = "任務地圖指南",
+  compartmentHint = "點擊開關世界地圖",
   panelZoom = "放大到區域地圖查看任務",
   panelEmpty = "這張地圖沒有收錄的任務",
   panelAllDone = "這張地圖沒有未完成的任務",
@@ -81,9 +82,25 @@ local zhTW = {
   statsLine = "資料 %d 筆任務，解析 %s ms，記憶體 %s MB",
   statsOver = "超過門檻（解析 %d ms 或記憶體 %d MB），資料可能需要拆分",
   statsNA = "資料 %d 筆任務，這個版本沒有計時 API，無法量測",
+  -- V298 副本
+  dungeonButton = "副本",
+  menuCurrent = "目前地圖",
+  menuScroll = "滾輪捲動 %d-%d／%d",
+  groupDungeon = "地城",
+  groupRaid = "團隊副本",
+  levelUnknown = "等級尚未收錄",
+  guideHeader = "%s · %s",
+  guideLevel = "建議等級 %d",
+  guideNote = "沒有副本地圖，這裡列出副本的首領與任務",
+  bossesTitle = "首領 %d",
+  bossesNone = "首領尚未收錄",
+  bossesMore = "（滾輪看其餘 %d 個）",
+  guideEmpty = "這個副本還沒有關聯的任務",
+  detailDungeon = "副本",
 }
 local enUS = {
   panelTitle = "QuestMapGuide",
+  compartmentHint = "Click to toggle the world map",
   panelZoom = "Zoom in to a zone map to see quests",
   panelEmpty = "No quests recorded for this map",
   panelAllDone = "No unfinished quests on this map",
@@ -162,6 +179,21 @@ local enUS = {
   statsLine = "Data: %d quests, parse %s ms, memory %s MB",
   statsOver = "Over threshold (parse %d ms or memory %d MB); the data may need splitting",
   statsNA = "Data: %d quests; no timing API in this client, cannot measure",
+  -- V298 dungeons
+  dungeonButton = "Dungeon",
+  menuCurrent = "Current map",
+  menuScroll = "Scroll %d-%d of %d",
+  groupDungeon = "Dungeons",
+  groupRaid = "Raids",
+  levelUnknown = "Level not recorded",
+  guideHeader = "%s · %s",
+  guideLevel = "Suggested level %d",
+  guideNote = "No dungeon map: bosses and quests are listed here",
+  bossesTitle = "Bosses %d",
+  bossesNone = "Bosses not recorded",
+  bossesMore = " (scroll for %d more)",
+  guideEmpty = "No quests linked to this dungeon yet",
+  detailDungeon = "Dungeon",
 }
 
 -- 每次呼叫時才讀語系，找不到的 key 回傳 key 本身（方便在畫面上看出漏譯）

@@ -29,6 +29,33 @@ H.eq(type(QuestMapGuide_OnAddonCompartmentEnter), "function", "Compartment enter
 H.eq(type(QuestMapGuide_OnAddonCompartmentLeave), "function", "Compartment leave")
 QuestMapGuide_OnAddonCompartmentClick()
 
+-- 2026-11-28 實機回報：小地圖右上角插件選單點「任務地圖指南」沒反應（預期開地圖）→ 點了開關世界地圖
+H.reset()
+ns = H.load(H.tocFiles("QuestMapGuide_Forever.toc")); H.fire("ADDON_LOADED", "QuestMapGuide")
+local toggled = 0
+_G.ToggleWorldMap = function() toggled = toggled + 1 end; H.installed.ToggleWorldMap = true
+QuestMapGuide_OnAddonCompartmentClick()
+H.eq(toggled, 1, "收納按鈕點了開關世界地圖")
+_G.ToggleWorldMap = function() error("boom") end
+local okT = pcall(QuestMapGuide_OnAddonCompartmentClick)
+H.check(okT, "ToggleWorldMap 出錯不往外丟")
+-- 沒有 ToggleWorldMap：WorldMapFrame 顯示中就藏、沒顯示就開
+_G.ToggleWorldMap = nil
+local wmf = H.widget("Frame"); wmf:Hide()
+_G.WorldMapFrame = wmf; H.installed.WorldMapFrame = true
+QuestMapGuide_OnAddonCompartmentClick()
+H.check(wmf:IsShown(), "沒有 ToggleWorldMap：開地圖")
+QuestMapGuide_OnAddonCompartmentClick()
+H.check(not wmf:IsShown(), "再點一次關地圖")
+-- 滑鼠移上去：提示標題與「點擊開關世界地圖」
+local tip = {}
+_G.GameTooltip = { SetOwner = function() end, AddLine = function(_, t) tip[#tip + 1] = t end, Show = function() end, Hide = function() tip.hidden = true end }
+H.installed.GameTooltip = true
+QuestMapGuide_OnAddonCompartmentEnter(nil, {})
+H.check(tip[1] ~= nil and tip[2] ~= nil, "滑鼠移上去有提示")
+QuestMapGuide_OnAddonCompartmentLeave()
+H.check(tip.hidden, "移開藏提示")
+
 -- 缺 WorldMapFrame：載入不報錯；handler 之間互不影響
 H.reset({ missing = { WorldMapFrame = true } })
 local okMissing, errMissing = pcall(function()

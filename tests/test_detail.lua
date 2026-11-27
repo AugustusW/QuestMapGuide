@@ -286,10 +286,10 @@ local hasDescHead = false
 for _, l in ipairs(ns.Detail.Lines()) do if l == "描述" then hasDescHead = true end end
 H.check(not hasDescHead, "無描述的任務沒有「描述」標題")
 
--- 起點連結：同地圖 → Pins.Show；別地圖 → 先 SetMapID 且明細仍開
+-- 起點連結：同地圖 → Pins.Show；別地圖 → 先 SetMapID 且明細仍開（起點列有「!」圖示；標題列也可點〔Shift 貼連結〕，要分開）
 local function startRow(ns)
   for _, f in ipairs(H.frames) do
-    if f._parent == ns.Detail.frame and f.fs and f._shown and f.onClick then return f end
+    if f._parent == ns.Detail.frame and f.fs and f._shown and f.onClick and f.pin and f.pin._shown then return f end
   end
 end
 ns, wm = setup({ map = 1429 })

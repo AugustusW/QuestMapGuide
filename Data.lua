@@ -62,12 +62,13 @@ local function open(group)
   return { s = group.s, idx = idx }
 end
 
-local Q, E, M, DS = EMPTY, EMPTY, EMPTY, EMPTY
+local Q, E, M, DS, G, X = EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY
 local raw = QMG_Data
 if type(raw) == "table" and raw.fmt == FORMAT then
   Q, E, M, DS = open(raw.q), open(raw.e), open(raw.m), open(raw.d)
+  G, X = open(raw.g), open(raw.x)   -- V298 副本與副本索引；舊資料檔沒有這兩組就是空
 end
-QMG_Data = nil   -- 字串只留在上面四組；全域表與索引字串不必常駐
+QMG_Data = nil   -- 字串只留在上面幾組；全域表與索引字串不必常駐
 
 local function get(group, key)
   local p = key ~= nil and group.idx[key]
@@ -152,6 +153,14 @@ local function overlay(id, q, o)
       mark.next = {}
       for _, n in ipairs(add) do q.next[#q.next + 1] = n; mark.next[n] = true end
     end
+  end
+  -- V298（G13 本機預覽）：內建沒有副本時，用自己記到的副本補（只限地下城 81／團隊 62 類型，與 golden 同規則）
+  if empty(q.dg) and (q.t == 81 or q.t == 62) and type(o.dungeons) == "table" then
+    local dg = {}
+    for mid, n in pairs(o.dungeons) do
+      if type(mid) == "number" and type(n) == "number" and n >= 1 and get(G, mid) then dg[#dg + 1] = mid end
+    end
+    if dg[1] then table.sort(dg); q.dg = dg; mark.dg = true end
   end
   if next(mark) then q.obs = mark end
   return q
@@ -240,6 +249,47 @@ function Data.byMap(uiMapId)
           break
         end
       end
+    end
+  end
+  if added then table.sort(list) end
+  return list
+end
+
+-- ── 副本（V298）────────────────────────────────────────────────────────────────
+-- 副本：mapId → {id, n=繁中名, t="dungeon"|"raid", lv=建議等級或 nil, b={首領名…}}；沒有就 nil
+function Data.dungeon(mapId)
+  local d = get(G, mapId)
+  if not d then return nil end
+  d.id = mapId
+  d.b = d.b or {}
+  return d
+end
+
+-- 全部副本：地城在前、團隊副本在後；同組依建議等級，沒有等級的放最後；再依名稱、mapId
+function Data.dungeons()
+  local list = {}
+  for _, mid in ipairs(sortedKeys(G)) do list[#list + 1] = Data.dungeon(mid) end
+  table.sort(list, function(a, b)
+    if a.t ~= b.t then return a.t == "dungeon" end
+    if (a.lv == nil) ~= (b.lv == nil) then return a.lv ~= nil end
+    if a.lv ~= b.lv then return a.lv < b.lv end
+    if a.n ~= b.n then return a.n < b.n end
+    return a.id < b.id
+  end)
+  return list
+end
+
+-- 這個副本的 questId（遞增）；自己記到（遊戲紀錄）且類型是地下城／團隊的任務也加進來
+function Data.byDungeon(mapId)
+  local list = get(X, mapId) or {}
+  local qs = obsQuests()
+  if not qs or mapId == nil then return list end
+  local have, added = {}, false
+  for _, id in ipairs(list) do have[id] = true end
+  for id, o in pairs(qs) do
+    if type(id) == "number" and not have[id] and type(o) == "table" and type(o.dungeons) == "table" and o.dungeons[mapId] then
+      local q = Data.quest(id)
+      if q and q.obs and q.obs.dg then list[#list + 1] = id; have[id] = true; added = true end
     end
   end
   if added then table.sort(list) end

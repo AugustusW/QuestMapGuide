@@ -36,6 +36,9 @@ If this addon helps you, a star on the repo helps other players find it. 覺得�
 - 在遊戲的任務日誌點任務：面板切到那個任務，開啟明細並標出起點（任務不在資料裡就不動作；地圖沒開時，打開地圖再切換）。
 - 學習繁中 NPC 名稱（只在 zhTW 客戶端，見下方「隱私」）。
 - 遊戲紀錄：接任務與交任務時記下起點與交任務 NPC、位置、獎勵與後續任務，用來補內建資料缺的欄位（明細標「（遊戲紀錄）」，內建有的值不覆蓋）；內建沒有的任務接過後也會列出（見下方「隱私」）。
+- 副本：面板右上角的「副本」選單可選 52 個地城與團隊副本，看首領與關聯任務；人在副本裡打開地圖會自動切到該副本的指南。任務明細有「副本」列，點了切到副本指南。
+- Shift 點任務列或明細的任務名稱，貼進聊天：日誌裡的任務貼成任務連結，其他任務貼純文字「[任務名稱]」（伺服器會把日誌外任務的連結轉成純文字）。
+- 小地圖插件選單點「任務地圖指南」可開關世界地圖。
 
 - A panel beside the world map listing the quests on the current zone map. Tabs: open, in log, done, all; the header shows "Available N / M".
 - Each row shows a status icon (available, in progress, completed), quest level with difficulty colour, the starting NPC and coordinates. Rows are one line high; long text is truncated and the row tooltip shows the full text.
@@ -51,6 +54,9 @@ If this addon helps you, a star on the repo helps other players find it. 覺得�
 - Clicking a quest in the game's quest log switches the panel to that quest, opening the detail and marking its start (quests not in the data are ignored; if the map is closed, the switch happens when it opens).
 - Learns Traditional Chinese NPC names (zhTW clients only; see Privacy below).
 - In-game records: when you accept or turn in a quest, the start and turn-in NPC, your position, the rewards and follow-up quests are recorded and used to fill fields missing from the bundled data (labelled "(recorded in game)" in the detail; bundled values are never overwritten). Quests not in the bundled data are listed once you have accepted them (see Privacy below).
+- Dungeons: the "Dungeon" menu at the top right of the panel lists 52 dungeons and raids with their bosses and linked quests; inside a dungeon the panel switches to that dungeon's guide when you open the map. The quest detail has a "Dungeon" line that opens the guide.
+- Shift-click a quest row or the quest title in the detail to paste it into chat: quests in your log become a quest link, others plain text "[quest name]" (the server turns links to quests outside your log into plain text).
+- Clicking QuestMapGuide in the minimap add-on menu opens and closes the world map.
 
 ## 指令 Commands
 
@@ -68,9 +74,9 @@ If this addon helps you, a star on the repo helps other players find it. 覺得�
 
 On Traditional Chinese (zhTW) clients, when the player points at or targets an NPC, the addon saves that NPC's ID and the Traditional Chinese name shown by the game into the save file (`QuestMapGuideDB.npcNames`: name, times seen, first and last time). Only NPCs that exist in the bundled data are recorded, at most once per 60 seconds per NPC; players, pets and vehicles are not recorded. Clients in other languages record nothing. The names stay in the local save file and the addon sends nothing on its own; they are used only when the player chooses to upload the save file to improve the shared data. Learned names are shown first on zhTW clients in the panel, the quest detail and the map markers.
 
-所有語系的客戶端都會在接任務與交任務時記錄遊戲紀錄（`QuestMapGuideDB.obs`，帳號共用）：任務 ID、名稱與目標說明、起點與交任務的 NPC 或物件（ID 與名稱）、當下玩家所在的地圖與座標、獎勵（經驗值、金錢、物品）、交完任務後同一個 NPC 給的後續任務，以及第一次與最近一次的時間。不記錄聊天、其他玩家或角色資訊。和 NPC 名稱一樣只存在本機存檔，插件不會自行傳送，只有玩家自己選擇上傳存檔時才會用來補充共用資料。作者用自己的遊戲紀錄補強內建資料；願意一起協助精進資料的玩家，歡迎來信 support@augustusw.com。
+所有語系的客戶端都會在接任務與交任務時記錄遊戲紀錄（`QuestMapGuideDB.obs`，帳號共用）：任務 ID、名稱與目標說明、起點與交任務的 NPC 或物件（ID 與名稱）、當下玩家所在的地圖與座標、獎勵（經驗值、金錢、物品）、交完任務後同一個 NPC 給的後續任務、人在副本裡推進任務目標時所在的副本，以及第一次與最近一次的時間。登入時也會從任務日誌讀取日誌中任務的獎勵物品。不記錄聊天、其他玩家或角色資訊。和 NPC 名稱一樣只存在本機存檔，插件不會自行傳送，只有玩家自己選擇上傳存檔時才會用來補充共用資料。作者用自己的遊戲紀錄補強內建資料；願意一起協助精進資料的玩家，歡迎來信 support@augustusw.com。
 
-On clients in every language, the addon records in-game observations when you accept or turn in a quest (`QuestMapGuideDB.obs`, shared across the account): the quest ID, title and objective text, the start and turn-in NPC or object (ID and name), the map and coordinates where you were standing, the rewards (experience, money, items), any follow-up quest the same NPC offers right after the turn-in, and the first and last time seen. Chat, other players and character details are not recorded. Like the NPC names, this stays in the local save file and the addon sends nothing on its own; it is used only when the player chooses to upload the save file to improve the shared data. The author uses their own records to improve the bundled data; if you would like to help, please email support@augustusw.com.
+On clients in every language, the addon records in-game observations when you accept or turn in a quest (`QuestMapGuideDB.obs`, shared across the account): the quest ID, title and objective text, the start and turn-in NPC or object (ID and name), the map and coordinates where you were standing, the rewards (experience, money, items), any follow-up quest the same NPC offers right after the turn-in, the dungeon you were in when a quest objective progressed there, and the first and last time seen. On login it also reads the reward items of the quests in your quest log. Chat, other players and character details are not recorded. Like the NPC names, this stays in the local save file and the addon sends nothing on its own; it is used only when the player chooses to upload the save file to improve the shared data. The author uses their own records to improve the bundled data; if you would like to help, please email support@augustusw.com.
 
 ## 存檔位置 SavedVariables
 

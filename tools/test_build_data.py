@@ -92,7 +92,7 @@ def test_entity_keys_split_npc_and_object(tmp_path):
 
 def test_meta(tmp_path):
     out = build_to(tmp_path, load_fixture())
-    assert run_lua(out, "QMG_Meta.schema") == "3"
+    assert run_lua(out, "QMG_Meta.schema") == "5"
     assert run_lua(out, "QMG_Meta.quests") == "5"
     assert run_lua(out, "QMG_Meta.entities") == "2"
     assert run_lua(out, "QMG_Meta.env") == "prod"
@@ -564,3 +564,35 @@ def test_holiday_field_in_lua(tmp_path):
     assert run_lua(out, "D.quest(9900004).h") == "2"   # fixture：364 暗月馬戲團
     assert run_lua(out, "D.quest(9900002).h") == "nil"  # fixture：其他分類
     assert run_lua(out, "D.quest(9900001).h") == "nil"  # fixture：沒有 categoryId
+
+
+# ---- V298：副本維度（spec 2026-11-27-wow-quest-dungeons-design.md 第六節）
+def test_dungeon_group_and_dg(tmp_path):
+    out = build_to(tmp_path, load_fixture())
+    assert run_lua(out, "table.concat(D.quest(9900002).dg, ',')") == "33,409"
+    assert run_lua(out, "D.quest(9900003).dg") == "nil"
+    assert run_lua(out, "table.concat(D.byDungeon(33), ',')") == "9900001,9900002"
+    assert run_lua(out, "#D.byDungeon(2875)") == "0"
+    assert run_lua(out, "D.dungeon(33).n .. '/' .. D.dungeon(33).t .. '/' .. D.dungeon(33).lv") == "影牙城堡/dungeon/18"
+    assert run_lua(out, "D.dungeon(2875).lv") == "nil"
+    assert run_lua(out, "table.concat(D.dungeon(33).b, ',')") == "雷希戈爾,大法師阿魯高"
+    assert run_lua(out, "#D.dungeon(409).b") == "0"
+    assert run_lua(out, "D.dungeon(1)") == "nil"
+    # 清單：地城在前、團隊在後；同組依建議等級，沒有等級的放最後
+    assert run_lua(out, "(function() local t = {} for _, x in ipairs(D.dungeons()) do t[#t+1] = x.id end return table.concat(t, ',') end)()") == "33,2875,409"
+
+
+def test_missing_dungeons_key_fails():
+    d = load_fixture()
+    del d["dungeons"]
+    with pytest.raises(build_data.BuildError) as e:
+        build_data.build_quests_lua(d)
+    assert "dungeons" in str(e.value)
+
+
+def test_quest_dungeon_not_in_table_fails():
+    d = load_fixture()
+    d["quests"][0]["dungeons"] = [99999]
+    with pytest.raises(build_data.BuildError) as e:
+        build_data.build_quests_lua(d)
+    assert "99999" in str(e.value)

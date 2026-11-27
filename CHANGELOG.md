@@ -2,6 +2,50 @@
 
 每個版本一段，標題是 `## <版本>`；段內小標用 `###`。從 0.3.0 起英文在上、中文在下，中間用 `---` 分隔。發版時 GitHub Release 與 CurseForge 的更新說明取自對應的段落。
 
+## 0.4.0
+
+### Dungeons
+
+- New "Dungeon" menu at the top right of the panel: pick any of the 52 dungeons and raids, sorted by recommended level, to see its bosses and quests, even outside the dungeon. Closing and reopening the map returns to the current map.
+- Inside a dungeon, the panel switches to that dungeon's guide automatically (Forever has no dungeon maps): bosses (scroll with the mouse wheel when there are many) and the quests linked to it, with the usual tabs. The search box and checkboxes are hidden in the guide, so low-level, holiday and completed quests are always listed there; class, faction and profession exclusions still follow your settings.
+- The bundled data now links 924 quests to their dungeons; the quest detail shows a "Dungeon:" line that opens the dungeon guide.
+- In-game records also note the dungeon when a quest objective progresses inside it.
+
+### Quest rewards
+
+- On login, rewards of the quests in your quest log are read from the log and saved to your in-game records when the bundled data has none (for example quests accepted before the records existed). Fixed rewards whose item link the game does not provide are read from the item ID instead.
+
+### Sharing quests in chat
+
+- Shift-click a quest row in the panel, or the quest title in the detail, to paste it into chat. Quests in your quest log are pasted as a clickable quest link; other quests are pasted as plain text "[quest name]", because the server turns links to quests outside your log into plain text.
+
+### Fixes
+
+- Clicking QuestMapGuide in the minimap add-on menu now opens and closes the world map (it used to only print the command list).
+- "Show completed" can be ticked on every tab; ticking it on another tab switches to the "All" tab.
+
+---
+
+### 副本
+
+- 面板右上角新增「副本」選單：52 個地城與團隊副本依建議等級排列，選了就看那個副本的首領與任務，人在野外也能看。關掉地圖再打開會回到目前地圖。
+- 人在副本裡打開地圖時，面板會自動切到該副本的指南（永恆沒有副本地圖）：列出首領（多的時候用滑鼠滾輪捲動）和關聯的任務，分頁跟平常一樣。副本指南裡沒有搜尋框與勾選框，所以低等、節慶與已完成的任務一律列出；排除職業、陣營與專業照你的設定。
+- 內建資料把 924 個任務對應到副本；任務明細多一列「副本：XXX」，點了切到副本指南。
+- 遊戲紀錄會在副本裡推進任務目標時，記下是哪個副本。
+
+### 任務獎勵
+
+- 登入時會讀任務日誌裡各任務的獎勵；內建資料沒有獎勵的任務（例如紀錄功能上線前就接的任務），會存進遊戲紀錄。遊戲沒有提供物品連結的固定獎勵，改用物品編號記錄。
+
+### 任務貼到聊天
+
+- 按住 Shift 點面板的任務列，或明細最上面的任務名稱，就會貼進聊天輸入框。在任務日誌裡的任務貼成可點的任務連結；其他任務貼純文字「[任務名稱]」，因為伺服器會把日誌外任務的連結轉成純文字。
+
+### 修正
+
+- 點小地圖插件選單裡的「任務地圖指南」，現在會開關世界地圖（原本只會印出指令說明）。
+- 「顯示已完成」每個分頁都能勾；在其他分頁勾下去會切到「全部」分頁。
+
 ## 0.3.0
 
 ### Data update

@@ -180,4 +180,56 @@ _G.C_QuestLog = { GetNumQuestLogEntries = function() return 0 end, GetInfo = fun
 SlashCmdList.QUESTMAPGUIDE("probe")
 H.eq(QuestMapGuideDB.probe.rewardXPType, "noQuest", "日誌空記 noQuest")
 H.eq(called, false, "日誌空不呼叫 GetQuestLogRewardXP")
+
+-- 任務日誌獎勵（2026-11-27 實機回報：日誌裡的任務有物品獎勵、插件沒有）：
+-- 對日誌裡每個任務選取後讀 GetNumQuestLogChoices／Rewards 與 GetQuestLogItemLink，記物品 ID 與數量；取完還原原選取
+H.check((function() local h = {} for _, n in ipairs(ns.Probe.APIS) do h[n] = true end
+  return h.GetNumQuestLogChoices and h.GetNumQuestLogRewards and h.GetQuestLogItemLink and h.GetQuestLogChoiceInfo
+    and h.GetQuestLogRewardInfo and h.GetQuestLogSelection end)(), "APIS 含任務日誌獎勵 API")
+_G.issecretvalue = function() return false end
+-- 永恆 1.60 沒有 SelectQuestLogEntry／GetQuestLogSelection（2026-11-27 探測存檔）：用 C_QuestLog 以 questId 選取
+local sel = 4242
+local BYQ = { [96988] = { c = { 21001, 21002 }, r = { 21003 } }, [777] = { c = {}, r = {} } }
+local LOG = { [2] = { q = 96988 }, [3] = { q = 777 } }
+setmetatable(LOG, { __index = function() return nil end })
+local function cur() return BYQ[sel] end
+_G.C_QuestLog = { GetNumQuestLogEntries = function() return 3 end,
+  GetInfo = function(i) if i == 1 then return { isHeader = true } end return LOG[i] and { questID = LOG[i].q } end,
+  GetSelectedQuest = function() return sel end, SetSelectedQuest = function(q) sel = q end }
+_G.GetNumQuestLogChoices = function() return cur() and #cur().c or 0 end
+_G.GetNumQuestLogRewards = function() return cur() and #cur().r or 0 end
+_G.GetQuestLogItemLink = function(kind, i)
+  local id = cur() and cur()[kind == "choice" and "c" or "r"][i]
+  return id and ("|cff1eff00|Hitem:" .. id .. "::::::::33:::::|h[x]|h|r") or nil
+end
+_G.GetQuestLogChoiceInfo = function(i) return "名", 1, 1, 2, true end
+_G.GetQuestLogRewardInfo = function(i) return "名", 1, 5, 2, true end
+_G.InCombatLockdown = function() return false end
+SlashCmdList.QUESTMAPGUIDE("probe")
+local lr = QuestMapGuideDB.probe.logRewards
+H.eq(type(lr), "table", "記錄日誌獎勵")
+H.eq(lr[1].q, 96988, "第一個任務")
+H.eq(lr[1].nc, 2, "可選獎勵數")
+H.eq(lr[1].c[1] .. "," .. lr[1].c[2], "21001,21002", "可選獎勵物品 ID")
+H.eq(lr[1].r[1], 21003, "固定獎勵物品 ID")
+H.eq(lr[1].rn[1], 5, "固定獎勵數量")
+H.eq(lr[2].q, 777, "第二個任務")
+H.eq(lr[2].nc, 0, "沒有獎勵記 0")
+H.eq(sel, 4242, "取完還原原選取")
+-- 戰鬥中不選取（避免動到保護狀態）
+_G.InCombatLockdown = function() return true end
+SlashCmdList.QUESTMAPGUIDE("probe")
+H.eq(QuestMapGuideDB.probe.logRewards, "combat", "戰鬥中記 combat 不讀")
+-- 函式不存在
+_G.InCombatLockdown = function() return false end
+_G.GetNumQuestLogChoices = nil
+SlashCmdList.QUESTMAPGUIDE("probe")
+H.eq(QuestMapGuideDB.probe.logRewards, "none", "函式不存在記 none")
+-- 呼叫出錯：該任務記 err，不中斷
+_G.GetNumQuestLogChoices = function() error("boom") end
+SlashCmdList.QUESTMAPGUIDE("probe")
+H.check(QuestMapGuideDB.probe.logRewards[1].err ~= nil, "呼叫出錯記 err")
+H.eq(sel, 4242, "出錯也還原原選取")
+for _, k in ipairs({ "GetQuestLogSelection", "SelectQuestLogEntry", "GetNumQuestLogChoices", "GetNumQuestLogRewards",
+  "GetQuestLogItemLink", "GetQuestLogChoiceInfo", "GetQuestLogRewardInfo", "InCombatLockdown" }) do _G[k] = nil end
 for _, k in ipairs({ "UnitSex", "ITEM_QUALITY_COLORS", "C_Item", "GetMoneyString", "GetQuestLogRewardXP", "C_QuestLog" }) do _G[k] = nil end

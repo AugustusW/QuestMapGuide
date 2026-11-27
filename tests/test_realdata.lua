@@ -26,12 +26,18 @@ local function count(t) local c = 0 for _ in pairs(t) do c = c + 1 end return c 
 for _, locale in ipairs({ "zhTW", "enUS" }) do
   local ns = load(locale)
   H.eq(QMG_Meta.env, "prod", locale .. " 正式資料來自 prod")
-  H.eq(QMG_Meta.schema, 3, locale .. " schema 3")
+  H.eq(QMG_Meta.schema, 5, locale .. " schema 5（V298）")
   local D = ns.Data
   H.eq(#D.questIds(), QMG_Meta.quests, locale .. " Meta.quests 與實際任務數一致")
   H.eq(#D.entityKeys(), QMG_Meta.entities, locale .. " Meta.entities 與實際數一致")
-  -- 2026-11-24 golden 第二輪匯出（V292 多排除 4 個內部任務，wago 1.60.1.71037）；重新匯出後有意更新
-  H.eq(QMG_Meta.quests, 6874, locale .. " 任務數（綁 2026-11-24 golden 第二輪匯出）")
+  -- 2026-11-27 V298 匯出（prod，含關聯副本、使用者確認的候選清單）；重新匯出後有意更新
+  H.eq(QMG_Meta.quests, 6885, locale .. " 任務數（綁 2026-11-27 V298 匯出）")
+  -- V298 副本：52 個副本；1014 除掉阿魯高 在影牙城堡
+  H.eq(#D.dungeons(), 52, locale .. " 副本數")
+  H.eq(D.dungeon(33).n, "影牙城堡", locale .. " 副本 33 名稱")
+  local hit = false
+  for _, id in ipairs(D.byDungeon(33)) do if id == 1014 then hit = true end end
+  H.check(hit, locale .. " 影牙城堡含 1014")
   H.check(#D.byMap(1429) > 0, locale .. " ByMap 非空")
   -- 每一筆都能解出來，且 s／e 引用的 entity 解得出（壞掉的打包只有這裡抓得到）
   local bad = 0
@@ -48,6 +54,20 @@ for _, locale in ipairs({ "zhTW", "enUS" }) do
   H.eq(D.quest(1).ri[1][1], 159, locale .. " 任務 1 獎勵物品 id")
   H.eq(D.quest(1).ri[1][2], nil, locale .. " null count 保持 nil")
   H.eq(type(D.quest(1).ri[1][3]), "boolean", locale .. " choice 是布林")
+
+  -- 實機回報（2026-11-27 達拉然城 9 首領）：首領區只放得下 5 行（約 15px 一行、區高 88），多了會壓到分頁
+  local over, many = {}, nil
+  for _, d in ipairs(D.dungeons()) do
+    ns.Panel.PickDungeon(d.id)
+    if #ns.Panel.BossLines() > 5 then over[#over + 1] = d.n end
+    if not many and d.b and #d.b > 5 then many = d end
+  end
+  H.eq(table.concat(over, ","), "", locale .. " 每個副本的首領區都不超過 5 行")
+  ns.Panel.PickDungeon(many.id)
+  local bl = ns.Panel.BossLines()
+  H.check(bl[1]:find(tostring(#many.b), 1, true) ~= nil, locale .. " 首領多時第一行是標題含總數")
+  H.eq(bl[#bl], "4. " .. many.b[4], locale .. " 標題之後列 4 個首領")
+  ns.Panel.PickDungeon(nil)
 
   ns.Panel.Refresh(1429)
   local rows = ns.Panel.Rows()

@@ -219,7 +219,8 @@ function build()
   if not q then return end
   local mapId = _G.WorldMapFrame and WorldMapFrame.GetMapID and WorldMapFrame:GetMapID() or nil
   local r, g, b = Theme.levelInk(ns.Filter.color(id))
-  add(ns.Filter.titled(questName(id) or ("#" .. id), q.t, id, q.h), { r = r, g = g, b = b, title = true })
+  add(ns.Filter.titled(questName(id) or ("#" .. id), q.t, id, q.h), { r = r, g = g, b = b, title = true,
+    onClick = function() Detail.QuestLinkClick(id) end })   -- Shift 點標題貼任務連結；一般點擊不動作
 
   add(L("status") .. L("colon") .. L("status" .. ({ open = "Open", log = "Log", done = "Done" })[ns.Status.of(id)]))
   if q.lv and q.lv > 0 then
@@ -239,6 +240,15 @@ function build()
   head("endAt")
   entityLines(q.e, mapId)
   if obs.e then fromGame() end
+  -- V298：關聯副本，每個副本一行、可點（切到面板的副本指南）
+  for i, mid in ipairs(q.dg or {}) do
+    local d = ns.Data.dungeon(mid)
+    local name = d and d.n or ("#" .. mid)
+    local label = i == 1 and (L("detailDungeon") .. L("colon")) or "　　"
+    add(label .. name, { kind = "link", dungeon = mid, r = LINK[1], g = LINK[2], b = LINK[3],
+      onClick = function() if ns.Panel and ns.Panel.ShowDungeon then ns.Panel.ShowDungeon(mid) end end })
+  end
+  if obs.dg then fromGame() end
   relLines("prereq", q.prev)
 
   -- 描述：沒有就整段不出現
@@ -477,6 +487,14 @@ function render()
 end
 
 function Detail.ItemButtons() return shownItems end
+-- 測試用：按下副本列
+function Detail.ClickDungeon(mapId)
+  for _, l in ipairs(lines) do
+    if l.dungeon == mapId and l.onClick then l.onClick(); return true end
+  end
+  return false
+end
+
 function Detail.Lines()
   local t = {}
   for i, l in ipairs(lines) do t[i] = l.text end
@@ -658,6 +676,53 @@ local function itemLink(id)
   return safe(b, "string")
 end
 local function keyDown(fn) return type(fn) == "function" and fn() and true or false end
+
+-- 任務 Shift 點擊貼到聊天（2026-11-28 使用者選 A）：面板清單的任務列、明細標題列共用。
+-- 遊戲有 GetQuestLink／C_QuestLog.GetQuestLink 就用它（回非保密字串才用）；沒有或出錯就自組
+-- |cffffff00|Hquest:<id>:0|h[<名稱>]|h|r（格式照遊戲自己貼出的連結；實機確認遊戲與插件的連結送出後都還是連結）。
+-- 貼法跟物品一樣走 ChatEdit_InsertLink；聊天輸入框沒開（回 false）就用 ChatFrame_OpenChat 開一個帶入。
+local function gameQuestLink(id)
+  for _, fn in ipairs({ _G.GetQuestLink, type(C_QuestLog) == "table" and C_QuestLog.GetQuestLink or nil }) do
+    if type(fn) == "function" then
+      local ok, v = pcall(fn, id)
+      if ok then
+        local l = safe(v, "string")
+        if l and l:find("|Hquest:", 1, true) then return l end
+      end
+    end
+  end
+  return nil
+end
+
+-- 不在日誌裡的任務：實機（2026-11-28）格式跟遊戲一樣（等級欄 0）伺服器仍剝成文字，推測只放行日誌裡的任務 →
+-- 使用者選 A：改貼純文字「[名稱]」，輸入框裡看到的就是送出去的樣子。日誌裡的照樣貼連結
+function Detail.QuestLink(id)
+  if type(id) ~= "number" then return nil end
+  local q = ns.Data.quest(id)
+  local name = q and questName(id)
+  if not name then return nil end
+  name = name:gsub("|", "")
+  local inLog = ns.Status and ns.Status.of and ns.Status.of(id) == "log"
+  if not inLog then return "[" .. name .. "]" end
+  local l = gameQuestLink(id)
+  if l then return l end
+  -- 等級欄固定 0：遊戲自己的任務連結是 |Hquest:<id>:0|h，填真實等級送出後會被伺服器剝成純文字
+  return ("|cffffff00|Hquest:%d:0|h[%s]|h|r"):format(id, name)
+end
+
+-- Shift 按著才處理：回 true 代表已處理（呼叫端不要再做一般點擊的動作）
+function Detail.QuestLinkClick(id)
+  if not keyDown(IsShiftKeyDown) then return false end
+  local link = Detail.QuestLink(id)
+  if not link then return true end
+  local inserted = false
+  if type(ChatEdit_InsertLink) == "function" then
+    local ok, r = pcall(ChatEdit_InsertLink, link)
+    inserted = ok and r and true or false
+  end
+  if not inserted and type(ChatFrame_OpenChat) == "function" then pcall(ChatFrame_OpenChat, link) end
+  return true
+end
 
 function Detail.ModifiedItemClick(id)
   if type(id) ~= "number" then return false end
